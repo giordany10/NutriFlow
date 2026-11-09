@@ -614,7 +614,7 @@ button.is-loading::after {
 
 .food-composer-fields {
   display: grid;
-  grid-template-columns: minmax(120px, 1fr) minmax(150px, 1.2fr) minmax(150px, 1.3fr) 100px auto;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   align-items: end;
   gap: 9px;
 }
@@ -625,6 +625,10 @@ button.is-loading::after {
 
 .food-composer-fields .button-secondary {
   min-height: 39px;
+}
+
+.food-composer-fields .form-hint {
+  font-size: 9px;
 }
 
 .custom-food-toggle {

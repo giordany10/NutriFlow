@@ -493,12 +493,14 @@
           </div>
           <div class="food-composer">
             <h3>Adicionar alimento e calcular porção</h3>
-            <p class="form-hint">Amostra inicial da TACO, com calorias e macronutrientes por 100 g; ajuste pela porção. Não inclui a tabela Tucunduva nem vitaminas. Confira os valores antes de usar.</p>
+            <p class="form-hint">Amostra inicial da TACO, com calorias e macronutrientes por 100 g; ajuste pela porção. Também é possível informar unidades: banana prata e ovo cozido já vêm com pesos médios aproximados, que podem ser ajustados. Não inclui a tabela Tucunduva nem vitaminas. Confira os valores antes de usar.</p>
             <div class="food-composer-fields">
               <div class="form-field"><label for="plan-food-meal">Refeição</label><select id="plan-food-meal" name="foodMeal"></select></div>
               <div class="form-field"><label for="plan-food-search">Buscar alimento</label><input id="plan-food-search" type="search" placeholder="Digite para filtrar a lista" autocomplete="off"></div>
               <div class="form-field"><label for="plan-food-select">Alimento (TACO — amostra)</label><select id="plan-food-select" name="foodId"></select></div>
               <div class="form-field"><label for="plan-food-grams">Quantidade (g)</label><input id="plan-food-grams" name="foodGrams" type="number" min="1" max="3000" step="1" value="100" inputmode="decimal"></div>
+              <div class="form-field"><label for="plan-food-unit-mode">Medida</label><select id="plan-food-unit-mode" name="foodUnitMode"><option value="grams">Gramas</option><option value="units">Unidades</option></select></div>
+              <div class="form-field" id="plan-food-unit-weight-field" hidden><label for="plan-food-unit-grams">Peso de cada unidade (g)</label><input id="plan-food-unit-grams" type="number" min="1" max="3000" step="1" inputmode="decimal" aria-describedby="plan-food-unit-hint"><small id="plan-food-unit-hint" class="form-hint">Use o peso médio da unidade comestível.</small></div>
               <button type="button" class="button-secondary" id="add-plan-food">Adicionar alimento</button>
             </div>
             <button type="button" class="text-link custom-food-toggle" id="toggle-custom-food" aria-expanded="false">Não encontrou? Cadastrar alimento</button>
@@ -508,6 +510,7 @@
               <div class="custom-food-fields">
                 <div class="form-field"><label for="custom-food-name">Nome</label><input id="custom-food-name" maxlength="100" disabled placeholder="Ex.: alimento preparado"></div>
                 <div class="form-field"><label for="custom-food-source">Fonte (opcional)</label><input id="custom-food-source" maxlength="60" disabled placeholder="Ex.: rótulo, TACO"></div>
+                <div class="form-field"><label for="custom-food-unit-grams">Peso de 1 unidade (g, opcional)</label><input id="custom-food-unit-grams" type="number" min="1" max="3000" step="1" disabled placeholder="Ex.: 50"></div>
                 <div class="form-field"><label for="custom-food-kcal">Calorias (kcal)</label><input id="custom-food-kcal" type="number" min="0" max="900" step="0.1" disabled></div>
                 <div class="form-field"><label for="custom-food-carbs">Carboidratos (g)</label><input id="custom-food-carbs" type="number" min="0" max="100" step="0.1" disabled></div>
                 <div class="form-field"><label for="custom-food-protein">Proteínas (g)</label><input id="custom-food-protein" type="number" min="0" max="100" step="0.1" disabled></div>

@@ -43,8 +43,8 @@ const foodCatalog = [
   { id: "rice-cooked", name: "Arroz tipo 1 cozido", category: "Cereais e derivados", source: "TACO (amostra)", kcal: 128, carbs: 28.1, protein: 2.5, fat: 0.2 },
   { id: "beans-cooked", name: "Feijão carioca cozido", category: "Leguminosas", source: "TACO (amostra)", kcal: 76, carbs: 13.6, protein: 4.8, fat: 0.5 },
   { id: "chicken-grilled", name: "Peito de frango grelhado", category: "Carnes e ovos", source: "TACO (amostra)", kcal: 159, carbs: 0, protein: 32, fat: 2.5 },
-  { id: "banana-prata", name: "Banana prata", category: "Frutas", source: "TACO (amostra)", kcal: 98, carbs: 26, protein: 1.3, fat: 0.1 },
-  { id: "egg-boiled", name: "Ovo cozido", category: "Carnes e ovos", source: "TACO (amostra)", kcal: 146, carbs: 0.6, protein: 13.3, fat: 9.5 },
+  { id: "banana-prata", name: "Banana prata", category: "Frutas", source: "TACO (amostra)", kcal: 98, carbs: 26, protein: 1.3, fat: 0.1, unitGrams: 70 },
+  { id: "egg-boiled", name: "Ovo cozido", category: "Carnes e ovos", source: "TACO (amostra)", kcal: 146, carbs: 0.6, protein: 13.3, fat: 9.5, unitGrams: 50 },
   { id: "sweet-potato-cooked", name: "Batata-doce cozida", category: "Raízes e tubérculos", source: "TACO (amostra)", kcal: 77, carbs: 18.4, protein: 0.6, fat: 0.1 }
 ];
 const sectionNames = {
@@ -767,6 +767,34 @@ function formatNumber(value, maximumFractionDigits = 1) {
   return new Intl.NumberFormat("pt-BR", { maximumFractionDigits }).format(Number(value));
 }
 
+function formatFoodQuantity(item) {
+  if (item.unit === "units" && Number.isFinite(Number(item.quantity)) && Number(item.quantity) > 0) {
+    const unitLabel = Number(item.quantity) === 1 ? "unidade" : "unidades";
+    return `${formatNumber(item.quantity)} ${unitLabel} (${formatNumber(item.grams)} g)`;
+  }
+  return `${formatNumber(item.grams)} g`;
+}
+
+function updateFoodUnitFields(resetWeight = false) {
+  const isUnits = document.getElementById("plan-food-unit-mode").value === "units";
+  const quantityLabel = document.querySelector('label[for="plan-food-grams"]');
+  const quantityInput = document.getElementById("plan-food-grams");
+  const unitWeightField = document.getElementById("plan-food-unit-weight-field");
+  const unitWeightInput = document.getElementById("plan-food-unit-grams");
+  const food = getAvailableFoods().find(entry => entry.id === document.getElementById("plan-food-select").value);
+
+  quantityLabel.textContent = isUnits ? "Quantidade (unidades)" : "Quantidade (g)";
+  quantityInput.step = isUnits ? "0.1" : "1";
+  quantityInput.min = isUnits ? "0.1" : "1";
+  if (isUnits && !quantityInput.value) quantityInput.value = "1";
+  if (!isUnits && quantityInput.value === "1") quantityInput.value = "100";
+  unitWeightField.hidden = !isUnits;
+  unitWeightInput.required = isUnits;
+  if (resetWeight || (isUnits && !unitWeightInput.value)) {
+    unitWeightInput.value = food && food.unitGrams ? String(food.unitGrams) : "";
+  }
+}
+
 function getAvailableFoods() {
   const customFoods = state.user
     ? getStore().customFoods.filter(food => food.ownerId === state.user.id)
@@ -801,6 +829,7 @@ function renderFoodOptions() {
     ).join("")}</optgroup>`).join("")
     : '<option value="">Nenhum alimento encontrado; use “Cadastrar alimento”.</option>';
   if (foods.some(food => food.id === previousValue)) select.value = previousValue;
+  updateFoodUnitFields(select.value !== previousValue);
 }
 
 function calculateFoodNutrients(items) {
@@ -825,7 +854,7 @@ function renderFoodNutrition(items) {
     const nutrients = calculateFoodNutrients([item]);
     return `<tr>
       <td><strong>${escapeHTML(food.name)}</strong><small>${escapeHTML(food.source)}</small></td>
-      <td>${formatNumber(item.grams)} g</td>
+      <td>${escapeHTML(formatFoodQuantity(item))}</td>
       <td>${formatNumber(nutrients.protein)} g</td>
       <td>${formatNumber(nutrients.carbs)} g</td>
       <td>${formatNumber(nutrients.fat)} g</td>
@@ -864,7 +893,7 @@ function renderPlanFoodEditor() {
     if (!food || !meal) return "";
     const nutrients = calculateFoodNutrients([item]);
     return `<div class="plan-food-row">
-      <span><strong>${escapeHTML(meal.name)}:</strong> ${escapeHTML(food.name)} (${escapeHTML(food.source)}) · ${formatNumber(item.grams)} g · ${formatNumber(nutrients.kcal)} kcal</span>
+      <span><strong>${escapeHTML(meal.name)}:</strong> ${escapeHTML(food.name)} (${escapeHTML(food.source)}) · ${escapeHTML(formatFoodQuantity(item))} · ${formatNumber(nutrients.kcal)} kcal</span>
       <span>C ${formatNumber(nutrients.carbs)} g · P ${formatNumber(nutrients.protein)} g · G ${formatNumber(nutrients.fat)} g</span>
       <button type="button" class="button-secondary" data-remove-plan-food="${index}" aria-label="Remover ${escapeHTML(food.name)}">Remover</button>
     </div>`;
@@ -1021,6 +1050,9 @@ function populateFoodComposer() {
     `<option value="${escapeHTML(meal.id)}">${escapeHTML(meal.name)}</option>`
   ).join("");
   document.getElementById("plan-food-search").value = "";
+  document.getElementById("plan-food-unit-mode").value = "grams";
+  document.getElementById("plan-food-grams").value = "100";
+  document.getElementById("plan-food-unit-grams").value = "";
   renderFoodOptions();
 }
 
@@ -1431,25 +1463,34 @@ function replyToPatientMessage(event) {
 function addPlanFood() {
   const mealId = document.getElementById("plan-food-meal").value;
   const foodId = document.getElementById("plan-food-select").value;
-  const grams = Number(document.getElementById("plan-food-grams").value);
+  const quantity = Number(document.getElementById("plan-food-grams").value);
+  const unit = document.getElementById("plan-food-unit-mode").value;
+  const unitGrams = unit === "units" ? Number(document.getElementById("plan-food-unit-grams").value) : null;
+  const grams = unit === "units" ? quantity * unitGrams : quantity;
   const food = getAvailableFoods().find(entry => entry.id === foodId);
   if (!mealDefinitions.some(meal => meal.id === mealId) ||
       !food ||
+      !Number.isFinite(quantity) || quantity <= 0 ||
+      (unit === "units" && (!Number.isFinite(unitGrams) || unitGrams < 1 || unitGrams > 3000)) ||
       !Number.isFinite(grams) || grams < 1 || grams > 3000) {
-    showToast("Escolha uma refeição, um alimento e uma porção entre 1 e 3000 g.");
+    showToast(unit === "units"
+      ? "Informe a quantidade, o peso por unidade e uma porção equivalente entre 1 e 3000 g."
+      : "Escolha uma refeição, um alimento e uma porção entre 1 e 3000 g.");
     return;
   }
   state.planFoodItems.push({
     mealId,
     foodId,
     grams,
+    ...(unit === "units" ? { unit, quantity, unitGrams } : {}),
     foodSnapshot: {
       name: food.name,
       source: food.source,
       kcal: food.kcal,
       carbs: food.carbs,
       protein: food.protein,
-      fat: food.fat
+      fat: food.fat,
+      unitGrams: food.unitGrams || null
     }
   });
   renderPlanFoodEditor();
@@ -1476,7 +1517,10 @@ function saveCustomFood() {
     kcal: Number(document.getElementById("custom-food-kcal").value),
     carbs: Number(document.getElementById("custom-food-carbs").value),
     protein: Number(document.getElementById("custom-food-protein").value),
-    fat: Number(document.getElementById("custom-food-fat").value)
+    fat: Number(document.getElementById("custom-food-fat").value),
+    unitGrams: document.getElementById("custom-food-unit-grams").value
+      ? Number(document.getElementById("custom-food-unit-grams").value)
+      : null
   };
   if (!food.name || ![food.kcal, food.carbs, food.protein, food.fat].every(Number.isFinite)) {
     showToast("Informe o nome e os valores nutricionais válidos por 100 g.");
@@ -1489,6 +1533,7 @@ function saveCustomFood() {
     document.getElementById("plan-food-search").value = "";
     renderFoodOptions();
     document.getElementById("plan-food-select").value = food.id;
+    updateFoodUnitFields(true);
     setCustomFoodFormOpen(false);
     showToast("Alimento salvo na sua lista para usar em outros planos.");
   } catch (error) {
@@ -1514,13 +1559,19 @@ function savePlan(event) {
           return {
             foodId: item.foodId,
             grams: item.grams,
+            ...(item.unit === "units" ? {
+              unit: item.unit,
+              quantity: item.quantity,
+              unitGrams: item.unitGrams
+            } : {}),
             foodSnapshot: food ? {
               name: food.name,
               source: food.source,
               kcal: food.kcal,
               carbs: food.carbs,
               protein: food.protein,
-              fat: food.fat
+              fat: food.fat,
+              unitGrams: food.unitGrams || null
             } : null
           };
         })
@@ -1829,6 +1880,11 @@ document.getElementById("patient-message-form").addEventListener("submit", sendP
 document.getElementById("plan-form").addEventListener("submit", savePlan);
 document.getElementById("add-plan-food").addEventListener("click", addPlanFood);
 document.getElementById("plan-food-search").addEventListener("input", renderFoodOptions);
+document.getElementById("plan-food-select").addEventListener("change", () => updateFoodUnitFields(true));
+document.getElementById("plan-food-unit-mode").addEventListener("change", event => {
+  document.getElementById("plan-food-grams").value = event.currentTarget.value === "units" ? "1" : "100";
+  updateFoodUnitFields();
+});
 document.getElementById("toggle-custom-food").addEventListener("click", event => {
   const isOpen = event.currentTarget.getAttribute("aria-expanded") !== "true";
   setCustomFoodFormOpen(isOpen);
