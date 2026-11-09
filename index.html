@@ -1,0 +1,466 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#f7f8f5">
+  <meta name="description" content="NutriFlow: organização simples e acolhedora para a rotina do nutricionista.">
+  <title>NutriFlow — Gestão nutricional</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --ink: #21332b;
+      --muted: #849087;
+      --green: #2e7655;
+      --green-dark: #225d42;
+      --green-soft: #eaf3ed;
+      --paper: #fff;
+      --canvas: #f7f8f5;
+      --line: #edf0ec;
+      --orange: #e49754;
+      --shadow: 0 12px 32px rgba(34, 57, 44, .055);
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+
+    * { box-sizing: border-box; }
+    body { margin: 0; min-width: 320px; background: var(--canvas); color: var(--ink); }
+    button, input, select, textarea { font: inherit; }
+    button { cursor: pointer; }
+    button:focus-visible, input:focus-visible, select:focus-visible { outline: 3px solid #9bc7a9; outline-offset: 2px; }
+    .app { display: flex; min-height: 100vh; }
+
+    .sidebar {
+      width: 248px; flex: 0 0 248px; background: var(--paper); border-right: 1px solid var(--line);
+      display: flex; flex-direction: column; padding: 27px 17px 18px; transition: transform .25s ease;
+    }
+    .brand { display: flex; align-items: center; gap: 11px; padding: 0 10px 31px; }
+    .brand-mark { width: 36px; height: 36px; display: grid; place-items: center; color: white; background: var(--green); border-radius: 12px; }
+    .brand-mark svg { width: 21px; height: 21px; }
+    .brand-name { font-size: 19px; font-weight: 750; letter-spacing: -.7px; }
+    .brand-name span { color: var(--green); }
+    .nav-label { padding: 0 11px; margin: 0 0 11px; color: #a0a9a2; font-size: 10px; font-weight: 750; letter-spacing: 1.15px; text-transform: uppercase; }
+    .nav-list { display: grid; gap: 5px; }
+    .nav-link {
+      width: 100%; display: flex; align-items: center; gap: 12px; border: 0; border-radius: 9px;
+      padding: 11px 12px; background: transparent; color: #79837c; text-align: left; font-size: 13px; font-weight: 570;
+    }
+    .nav-link:hover { background: #f6f8f5; color: var(--ink); }
+    .nav-link.active { background: var(--green-soft); color: var(--green-dark); font-weight: 680; }
+    .nav-link svg { width: 17px; height: 17px; flex: 0 0 17px; }
+    .nav-count { margin-left: auto; font-size: 11px; color: #8c978f; }
+    .sidebar-bottom { margin-top: auto; }
+    .help-card { padding: 15px; background: #f6f8f5; border-radius: 12px; margin: 0 2px 17px; }
+    .help-card strong { display: block; font-size: 12px; margin-bottom: 5px; }
+    .help-card p { color: var(--muted); font-size: 11px; line-height: 1.55; margin: 0 0 10px; }
+    .help-card button { padding: 0; border: 0; background: none; color: var(--green); font-size: 11px; font-weight: 700; }
+    .profile { border-top: 1px solid var(--line); padding: 17px 5px 0; display: flex; align-items: center; gap: 10px; }
+    .avatar { display: grid; place-items: center; flex: 0 0 36px; width: 36px; height: 36px; border-radius: 50%; color: #35654d; background: #e6efe7; font-size: 12px; font-weight: 750; }
+    .profile-info { min-width: 0; flex: 1; }
+    .profile-info strong { display: block; font-size: 12px; }
+    .profile-info span { color: var(--muted); font-size: 10px; }
+    .icon-button { border: 0; background: transparent; color: #869087; display: grid; place-items: center; border-radius: 8px; width: 34px; height: 34px; }
+    .icon-button:hover { background: #f3f5f2; color: var(--ink); }
+    .icon-button svg { width: 18px; height: 18px; }
+
+    .main { min-width: 0; flex: 1; }
+    .topbar { height: 76px; display: flex; align-items: center; justify-content: space-between; padding: 0 38px; background: rgba(255,255,255,.82); border-bottom: 1px solid var(--line); }
+    .breadcrumb { color: #929b94; font-size: 12px; }
+    .breadcrumb strong { color: #46564b; font-weight: 600; }
+    .top-actions { display: flex; align-items: center; gap: 14px; }
+    .search { position: relative; }
+    .search svg { position: absolute; width: 16px; height: 16px; color: #9aa39c; top: 10px; left: 12px; }
+    .search input { width: 225px; height: 37px; border: 1px solid #e9ede8; border-radius: 9px; background: white; padding: 0 12px 0 36px; font-size: 12px; color: var(--ink); }
+    .search input::placeholder { color: #a3aaa5; }
+    .content { max-width: 1450px; margin: 0 auto; padding: 34px 38px 48px; }
+    .welcome { display: flex; align-items: flex-end; justify-content: space-between; gap: 18px; margin-bottom: 26px; }
+    .eyebrow { color: var(--green); font-size: 11px; font-weight: 750; letter-spacing: .8px; text-transform: uppercase; margin: 0 0 8px; }
+    h1 { font-size: clamp(24px, 3vw, 29px); letter-spacing: -1.05px; margin: 0; line-height: 1.2; }
+    .welcome p { color: var(--muted); font-size: 13px; margin: 8px 0 0; }
+    .button-primary { border: 0; border-radius: 9px; color: #fff; background: var(--green); display: inline-flex; align-items: center; justify-content: center; gap: 8px; padding: 11px 15px; font-weight: 650; font-size: 12px; white-space: nowrap; box-shadow: 0 4px 10px rgba(46,118,85,.12); }
+    .button-primary:hover { background: var(--green-dark); }
+    .button-primary svg { width: 15px; height: 15px; }
+    .button-secondary { border: 1px solid #e7ebe6; border-radius: 8px; background: white; padding: 8px 11px; color: #526056; font-size: 11px; font-weight: 620; }
+    .button-secondary:hover { border-color: #bed4c4; color: var(--green); }
+
+    .stats { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 15px; margin-bottom: 23px; }
+    .stat-card, .panel, .patient-card { background: white; border: 1px solid #eff1ed; border-radius: 12px; box-shadow: var(--shadow); }
+    .stat-card { min-height: 119px; padding: 17px 18px; }
+    .stat-top { display: flex; align-items: center; justify-content: space-between; color: #808a82; font-size: 11px; }
+    .stat-icon { width: 30px; height: 30px; display: grid; place-items: center; border-radius: 9px; color: var(--green); background: #edf5ef; }
+    .stat-icon svg { width: 16px; height: 16px; }
+    .stat-value { display: flex; align-items: baseline; gap: 8px; margin-top: 11px; }
+    .stat-value strong { font-size: 25px; letter-spacing: -.8px; }
+    .stat-value span { color: var(--green); font-size: 10px; font-weight: 650; }
+    .stat-foot { color: #9aa39b; font-size: 10px; margin-top: 3px; }
+
+    .dashboard-grid { display: grid; grid-template-columns: minmax(0, 1.62fr) minmax(280px, .92fr); gap: 17px; align-items: start; }
+    .left-column, .right-column { display: grid; gap: 17px; min-width: 0; }
+    .panel { padding: 19px; }
+    .panel-heading { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 17px; }
+    .panel-heading h2 { font-size: 14px; letter-spacing: -.2px; margin: 0; }
+    .panel-heading p { color: var(--muted); font-size: 10px; margin: 5px 0 0; }
+    .text-link { border: 0; background: none; color: var(--green); font-weight: 650; font-size: 11px; padding: 5px; white-space: nowrap; }
+    .text-link:hover { text-decoration: underline; }
+    .date-pill { padding: 7px 9px; color: #69756c; background: #f7f8f6; border-radius: 7px; font-size: 10px; }
+    .appointment-list { display: grid; gap: 0; }
+    .appointment { display: grid; grid-template-columns: 48px 3px minmax(0,1fr) auto; align-items: center; gap: 11px; min-height: 68px; border-top: 1px solid #f0f2ef; }
+    .appointment:first-child { border-top: 0; }
+    .appointment-time { font-size: 11px; font-weight: 700; color: #526056; }
+    .appointment-line { height: 36px; border-radius: 4px; background: #73ad83; }
+    .appointment:nth-child(2) .appointment-line { background: #e5aa67; }
+    .appointment:nth-child(3) .appointment-line { background: #91a7cf; }
+    .appointment-info { min-width: 0; }
+    .appointment-info strong { display: block; font-size: 11px; font-weight: 670; }
+    .appointment-info span { display: block; font-size: 10px; color: #939c95; margin-top: 4px; }
+    .appointment-type { padding: 5px 7px; border-radius: 6px; background: #edf5ef; color: #558163; font-size: 9px; font-weight: 650; white-space: nowrap; }
+    .appointment:nth-child(2) .appointment-type { background: #fbf2e7; color: #b17a3e; }
+    .appointment:nth-child(3) .appointment-type { background: #eef1f8; color: #7084ad; }
+    .patient-list { display: grid; }
+    .patient-row { display: flex; align-items: center; gap: 10px; padding: 11px 0; border-top: 1px solid #f0f2ef; }
+    .patient-row:first-child { border-top: 0; padding-top: 0; }
+    .patient-row .avatar { width: 34px; height: 34px; flex-basis: 34px; font-size: 10px; }
+    .patient-name { flex: 1; min-width: 0; }
+    .patient-name strong { display: block; font-size: 11px; font-weight: 650; }
+    .patient-name span { display: block; margin-top: 4px; color: #939c95; font-size: 9px; }
+    .status { padding: 5px 7px; border-radius: 20px; font-size: 9px; font-weight: 650; }
+    .status.good { color: #4a805a; background: #edf5ef; }
+    .status.pending { color: #b07a42; background: #fbf2e7; }
+    .meal-highlight { position: relative; overflow: hidden; min-height: 148px; padding: 18px; background: #edf4ed; border-radius: 10px; }
+    .meal-highlight::after { content: "✳"; position: absolute; font-size: 116px; line-height: 1; right: 5px; bottom: -30px; color: rgba(94,147,104,.09); transform: rotate(12deg); }
+    .meal-tag { display: inline-flex; padding: 5px 8px; border-radius: 20px; background: white; color: #548064; font-size: 9px; font-weight: 700; }
+    .meal-highlight h3 { position: relative; z-index: 1; max-width: 205px; font-size: 15px; line-height: 1.45; margin: 12px 0 5px; }
+    .meal-highlight p { position: relative; z-index: 1; color: #748579; font-size: 10px; margin: 0; }
+    .meal-link { position: relative; z-index: 1; padding: 0; border: 0; color: var(--green); background: none; font-size: 10px; font-weight: 700; margin-top: 12px; }
+    .week { display: grid; grid-template-columns: repeat(7, 1fr); gap: 5px; }
+    .day { display: grid; justify-items: center; gap: 7px; padding: 7px 2px; border-radius: 9px; color: #89938b; font-size: 9px; }
+    .day strong { display: grid; width: 27px; height: 27px; place-items: center; border-radius: 50%; font-size: 10px; color: #58665c; }
+    .day.today { color: var(--green); font-weight: 700; }
+    .day.today strong { color: white; background: var(--green); }
+    .day.has-event strong::after { content: ""; position: absolute; margin-top: 31px; width: 4px; height: 4px; border-radius: 50%; background: #e7a363; }
+
+    .section-view { display: none; }
+    .section-view.active { display: block; }
+    .page-panel { padding: 20px; background: white; border: 1px solid var(--line); border-radius: 12px; box-shadow: var(--shadow); }
+    .table-wrap { width: 100%; overflow-x: auto; }
+    .data-table { width: 100%; border-collapse: collapse; text-align: left; }
+    .data-table th { padding: 12px 10px; color: #939c95; border-bottom: 1px solid var(--line); font-size: 10px; font-weight: 650; white-space: nowrap; }
+    .data-table td { padding: 13px 10px; border-bottom: 1px solid #f0f2ef; color: #59665c; font-size: 11px; white-space: nowrap; }
+    .table-person { display: flex; align-items: center; gap: 9px; color: var(--ink); font-weight: 650; }
+    .table-person .avatar { width: 30px; height: 30px; flex-basis: 30px; font-size: 9px; }
+    .empty-state { text-align: center; color: var(--muted); padding: 36px 12px; font-size: 12px; }
+    .meal-plan-grid { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 14px; }
+    .meal-plan-card { border: 1px solid var(--line); border-radius: 11px; padding: 17px; }
+    .meal-plan-card .meal-tag { background: #edf5ef; }
+    .meal-plan-card h3 { font-size: 13px; margin: 13px 0 6px; }
+    .meal-plan-card p { color: var(--muted); font-size: 10px; line-height: 1.6; margin: 0; }
+    .meal-plan-meta { display: flex; justify-content: space-between; padding-top: 13px; margin-top: 13px; border-top: 1px solid var(--line); color: #849087; font-size: 9px; }
+    .recipe-grid { display: grid; grid-template-columns: repeat(3, minmax(0,1fr)); gap: 14px; }
+    .recipe-card { background: white; border: 1px solid var(--line); border-radius: 11px; overflow: hidden; }
+    .recipe-art { min-height: 105px; display: grid; place-items: center; background: linear-gradient(135deg,#eaf2e9,#f7eee2); font-size: 37px; }
+    .recipe-card:nth-child(2) .recipe-art { background: linear-gradient(135deg,#f6eadb,#edf1e8); }
+    .recipe-card:nth-child(3) .recipe-art { background: linear-gradient(135deg,#e9eef5,#f5eddf); }
+    .recipe-copy { padding: 14px; }
+    .recipe-copy h3 { margin: 0 0 6px; font-size: 12px; }
+    .recipe-copy p { margin: 0; color: var(--muted); font-size: 10px; line-height: 1.5; }
+    .recipe-meta { display: flex; justify-content: space-between; margin-top: 12px; color: #748078; font-size: 9px; }
+
+    .modal-backdrop { display: none; position: fixed; inset: 0; z-index: 10; padding: 20px; background: rgba(25,39,30,.4); align-items: center; justify-content: center; }
+    .modal-backdrop.open { display: flex; }
+    .modal { width: min(100%, 440px); max-height: 90vh; overflow-y: auto; padding: 23px; background: white; border-radius: 14px; box-shadow: 0 22px 70px rgba(0,0,0,.18); }
+    .modal-heading { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 20px; }
+    .modal-heading h2 { margin: 0; font-size: 18px; }
+    .modal-heading p { color: var(--muted); font-size: 11px; margin: 6px 0 0; }
+    .form-grid { display: grid; gap: 13px; }
+    .form-field label { display: block; margin-bottom: 6px; font-size: 10px; color: #69766d; font-weight: 650; }
+    .form-field input, .form-field select { width: 100%; height: 39px; padding: 0 11px; border: 1px solid #e7ebe6; border-radius: 8px; background: white; color: var(--ink); font-size: 12px; }
+    .modal-actions { display: flex; justify-content: flex-end; gap: 9px; margin-top: 20px; }
+    .toast { position: fixed; z-index: 20; right: 22px; bottom: 22px; padding: 13px 17px; background: #244e38; color: white; border-radius: 9px; box-shadow: var(--shadow); font-size: 12px; opacity: 0; transform: translateY(8px); pointer-events: none; transition: .2s ease; }
+    .toast.show { opacity: 1; transform: translateY(0); }
+    .mobile-menu { display: none; }
+    .menu-backdrop { display: none; }
+
+    @media (max-width: 1080px) {
+      .sidebar { width: 220px; flex-basis: 220px; }
+      .topbar { padding: 0 25px; }
+      .content { padding: 29px 25px 40px; }
+      .dashboard-grid { grid-template-columns: minmax(0,1.35fr) minmax(260px,.9fr); gap: 13px; }
+      .left-column, .right-column { gap: 13px; }
+      .stats { gap: 10px; }
+      .stat-card { padding: 15px 13px; }
+      .stat-value strong { font-size: 22px; }
+    }
+    @media (max-width: 800px) {
+      .sidebar { position: fixed; z-index: 12; inset: 0 auto 0 0; width: 265px; transform: translateX(-105%); box-shadow: 10px 0 35px rgba(30,45,34,.1); }
+      .sidebar.open { transform: translateX(0); }
+      .menu-backdrop.open { display: block; position: fixed; z-index: 11; inset: 0; background: rgba(30,45,34,.28); }
+      .mobile-menu { display: grid; }
+      .topbar { height: 65px; padding: 0 20px; gap: 12px; }
+      .topbar-start { display: flex; align-items: center; gap: 10px; }
+      .content { padding: 25px 20px 36px; }
+      .dashboard-grid { grid-template-columns: minmax(0,1.3fr) minmax(240px,.9fr); }
+      .search input { width: 185px; }
+    }
+    @media (max-width: 620px) {
+      .topbar { padding: 0 14px; }
+      .breadcrumb { display: none; }
+      .top-actions { gap: 5px; }
+      .search input { width: min(48vw, 190px); height: 35px; }
+      .content { padding: 22px 14px 30px; }
+      .welcome { align-items: flex-start; flex-direction: column; gap: 15px; margin-bottom: 20px; }
+      .welcome .button-primary { width: 100%; }
+      .stats { grid-template-columns: repeat(2, minmax(0,1fr)); gap: 10px; margin-bottom: 13px; }
+      .stat-card { min-height: 105px; padding: 13px; }
+      .stat-top { font-size: 10px; }
+      .stat-value { margin-top: 9px; }
+      .stat-value strong { font-size: 22px; }
+      .dashboard-grid { grid-template-columns: 1fr; gap: 13px; }
+      .panel { padding: 16px; }
+      .right-column { grid-template-columns: 1fr; }
+      .meal-plan-grid, .recipe-grid { grid-template-columns: 1fr; }
+      .page-panel { padding: 14px; }
+      .date-pill { font-size: 9px; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { scroll-behavior: auto !important; transition-duration: .01ms !important; }
+    }
+  </style>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <a class="skip-link" id="skip-link" href="#auth-email">Pular para o conteúdo</a>
+  <main class="auth-screen" id="auth-screen">
+    <section class="auth-card" aria-labelledby="auth-title">
+      <a class="auth-brand" href="#" aria-label="NutriFlow, início">
+        <span class="brand-mark" aria-hidden="true">🌿</span>
+        <span class="brand-name">nutri<span>flow</span></span>
+      </a>
+      <p class="eyebrow">Seu consultório, mais leve</p>
+      <h1 id="auth-title">Bem-vindo(a) ao NutriFlow</h1>
+      <p class="auth-description">Entre para organizar seus pacientes e planos alimentares.</p>
+      <form id="auth-form" novalidate>
+        <div class="form-grid">
+          <div class="form-field" id="signup-name-field" hidden>
+            <label for="auth-name">Seu nome</label>
+            <input id="auth-name" name="name" autocomplete="name" maxlength="80">
+          </div>
+          <div class="form-field signup-patient-field" hidden>
+            <label for="auth-goal">Seu objetivo principal</label>
+            <input id="auth-goal" name="goal" maxlength="160" placeholder="Ex.: melhorar minha alimentação">
+          </div>
+          <div class="form-field signup-patient-field" hidden>
+            <label for="auth-allergies">Alergias ou restrições alimentares</label>
+            <textarea id="auth-allergies" name="allergies" rows="2" maxlength="500" placeholder="Se não tiver, deixe em branco"></textarea>
+          </div>
+          <div class="form-field">
+            <label for="auth-email">E-mail</label>
+            <input id="auth-email" name="email" type="email" autocomplete="email" required>
+          </div>
+          <div class="form-field">
+            <label for="auth-password">Senha</label>
+            <input id="auth-password" name="password" type="password" autocomplete="current-password" minlength="8" required>
+          </div>
+        </div>
+        <p class="auth-error" id="auth-error" role="alert" hidden></p>
+        <button class="button-primary auth-submit" id="auth-submit" type="submit">Entrar</button>
+      </form>
+        <p class="auth-toggle-copy"><span id="auth-toggle-text">É paciente e ainda não tem conta?</span>
+        <button class="text-link" id="auth-toggle" type="button">Criar conta de paciente</button>
+      </p>
+      <p class="auth-privacy" id="auth-guidance">Entre com seus dados cadastrados. Pacientes podem criar uma conta para acessar seus planos.</p>
+      <p class="auth-privacy">Demonstração local: as contas e senhas ficam neste navegador. Não use dados reais de saúde nem esta versão em produção.</p>
+    </section>
+  </main>
+  <div class="app" id="app-shell" hidden>
+    <aside class="sidebar" id="sidebar" aria-label="Navegação principal">
+      <div class="brand">
+        <div class="brand-mark" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20 4c-8 0-13 3.8-13 10.1A5.9 5.9 0 0 0 13 20c6.2 0 7-8.8 7-16Z"/><path d="M4 20c2.4-4.1 5.9-7.5 10.5-10"/></svg></div>
+        <div class="brand-name">nutri<span>flow</span></div>
+      </div>
+      <p class="nav-label">Menu principal</p>
+      <nav class="nav-list nutritionist-only">
+        <button class="nav-link active nutritionist-only" data-view="dashboard"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="8" height="8" rx="2"/><rect x="13" y="3" width="8" height="5" rx="2"/><rect x="13" y="10" width="8" height="11" rx="2"/><rect x="3" y="13" width="8" height="8" rx="2"/></svg>Visão geral</button>
+        <button class="nav-link" data-view="patients"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="10" cy="7" r="4"/><path d="M20 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg>Pacientes<span class="nav-count" id="patient-count">24</span></button>
+        <button class="nav-link" data-view="plans"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2Z"/><path d="M8 7h8M8 11h6"/></svg>Planos alimentares</button>
+        <button class="nav-link" data-view="schedule"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M16 3v4M8 3v4M3 11h18"/><path d="m9 16 2 2 4-4"/></svg>Agenda</button>
+        <button class="nav-link" data-view="recipes"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M7 3h10l1 5H6l1-5Z"/><path d="M5 8h14l-1 13H6L5 8Z"/><path d="M9 12h6M9 16h6"/></svg>Receitas</button>
+        <button class="nav-link" data-view="reports"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="m19 9-5 5-4-4-5 5"/><path d="M15 9h4v4"/></svg>Relatórios</button>
+        <button class="nav-link" data-view="messages">Dúvidas dos pacientes<span class="nav-count" id="message-count">0</span></button>
+        <button class="nav-link admin-only" data-view="admin" hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="10" cy="7" r="4"/><path d="M20 8v6m3-3h-6"/></svg>Administração</button>
+      </nav>
+      <nav class="nav-list patient-only" hidden aria-label="Menu do paciente">
+        <button class="nav-link" data-view="portal">Meu plano alimentar</button>
+      </nav>
+      <div class="sidebar-bottom">
+        <details class="accessibility-tools">
+          <summary>Acessibilidade</summary>
+          <div class="accessibility-actions">
+            <button type="button" class="button-secondary" id="font-smaller" aria-label="Diminuir tamanho do texto">A−</button>
+            <button type="button" class="button-secondary" id="font-larger" aria-label="Aumentar tamanho do texto">A+</button>
+            <button type="button" class="button-secondary" id="contrast-toggle" aria-pressed="false">Alto contraste</button>
+          </div>
+        </details>
+        <div class="profile"><div class="avatar" id="profile-avatar">RS</div><div class="profile-info"><strong id="profile-name">Raphael Sclaco</strong><span id="profile-role">Nutricionista</span></div><button class="icon-button" id="logout-button" aria-label="Sair da conta" title="Sair"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M10 17l5-5-5-5M15 12H3"/><path d="M12 3h6a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-6"/></svg></button></div>
+      </div>
+    </aside>
+    <div class="menu-backdrop" id="menu-backdrop"></div>
+    <main class="main">
+      <header class="topbar">
+        <div class="topbar-start">
+          <button class="icon-button mobile-menu" id="menu-toggle" aria-label="Abrir menu" aria-expanded="false" aria-controls="sidebar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M4 6h16M4 12h16M4 18h16"/></svg></button>
+          <div class="breadcrumb">Seu espaço <span aria-hidden="true">/</span> <strong id="breadcrumb-current">Visão geral</strong></div>
+        </div>
+        <div class="top-actions">
+          <label class="search nutritionist-only"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-4-4"/></svg><input id="search-input" type="search" placeholder="Buscar paciente..." aria-label="Buscar paciente"></label>
+        </div>
+      </header>
+      <div class="content" id="main-content" tabindex="-1">
+        <section class="section-view active nutritionist-only" id="view-dashboard">
+          <div class="welcome">
+            <div><p class="eyebrow">Bem-vindo(a)</p><h1 id="dashboard-greeting">Olá, Raphael <span aria-hidden="true">☀️</span></h1><p>Aqui está um resumo do seu consultório hoje.</p></div>
+            <button class="button-primary" data-open-modal><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>Adicionar paciente</button>
+          </div>
+          <div class="stats dashboard-stats">
+            <article class="stat-card"><div class="stat-top"><span>Meus pacientes</span><span class="stat-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M16 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="10" cy="7" r="4"/><path d="M20 8v6m3-3h-6"/></svg></span></div><div class="stat-value"><strong id="active-patient-total">0</strong><span>Cadastros</span></div><div class="stat-foot">dados guardados neste navegador</div></article>
+            <article class="stat-card"><div class="stat-top"><span>Planos alimentares</span><span class="stat-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2Z"/><path d="M8 7h8"/></svg></span></div><div class="stat-value"><strong id="active-plan-total">0</strong><span>Seus dados</span></div><div class="stat-foot">planos salvos na sua conta</div></article>
+            <article class="stat-card"><div class="stat-top"><span>Acessos de pacientes</span><span class="stat-icon" aria-hidden="true">♙</span></div><div class="stat-value"><strong id="pending-invite-total">0</strong><span>Sem acesso</span></div><div class="stat-foot">pacientes ainda sem conta</div></article>
+          </div>
+          <div class="dashboard-grid">
+            <div class="left-column">
+              <section class="panel">
+                <div class="panel-heading"><div><h2>Pacientes</h2><p>Seus cadastros recentes</p></div><button class="text-link" data-navigate="patients">Ver todos →</button></div>
+                <div class="patient-list" id="recent-patients-list"><p class="empty-state">Seus pacientes cadastrados aparecerão aqui.</p></div>
+              </section>
+            </div>
+            <div class="right-column">
+              <section class="panel">
+                <div class="panel-heading"><div><h2>Acesso rápido</h2><p>O que você quer fazer agora?</p></div></div>
+                <div class="quick-actions">
+                  <button class="quick-action" id="dashboard-new-plan" type="button"><span class="quick-action-icon" aria-hidden="true">＋</span><span><strong>Criar plano alimentar</strong><small>Escolha um paciente e organize as refeições</small></span><span class="quick-action-arrow" aria-hidden="true">→</span></button>
+                  <button class="quick-action" id="dashboard-invite-patient" type="button"><span class="quick-action-icon" aria-hidden="true">♙</span><span><strong>Cadastrar paciente</strong><small>Informe o e-mail que ele usará para criar a conta</small></span><span class="quick-action-arrow" aria-hidden="true">→</span></button>
+                  <button class="quick-action" type="button" data-navigate="schedule"><span class="quick-action-icon" aria-hidden="true">▦</span><span><strong>Ver agenda</strong><small>Acesse seus atendimentos</small></span><span class="quick-action-arrow" aria-hidden="true">→</span></button>
+                </div>
+              </section>
+            </div>
+          </div>
+        </section>
+
+        <section class="section-view" id="view-patients">
+          <div class="welcome"><div><p class="eyebrow">Seu consultório</p><h1>Pacientes</h1><p>Organize os cadastros e acompanhe cada jornada.</p></div><button class="button-primary" data-open-modal><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>Adicionar paciente</button></div>
+          <div class="page-panel"><div class="panel-heading"><div><h2>Todos os pacientes</h2><p id="patient-list-count">0 pacientes cadastrados</p></div><button class="button-secondary" id="clear-search">Limpar busca</button></div><div class="table-wrap"><table class="data-table"><caption class="sr-only">Pacientes da sua conta</caption><thead><tr><th>PACIENTE</th><th>OBJETIVO</th><th>ALERGIAS / RESTRIÇÕES</th><th>ÚLTIMA CONSULTA</th><th>STATUS</th><th>ACESSO</th></tr></thead><tbody id="patients-table"></tbody></table></div></div>
+        </section>
+
+        <section class="section-view" id="view-plans">
+          <div class="welcome"><div><p class="eyebrow">Nutrição personalizada</p><h1>Planos alimentares</h1><p>Planos organizados para cada etapa do cuidado.</p></div><button class="button-primary" id="new-plan-button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>Novo plano</button></div>
+          <div class="meal-plan-grid" id="meal-plans-list"><p class="empty-state">Seus planos aparecerão aqui. Crie um plano e associe a um paciente.</p></div>
+        </section>
+
+        <section class="section-view" id="view-schedule">
+          <div class="welcome"><div><p class="eyebrow">Sua rotina</p><h1>Agenda</h1><p>Atendimentos organizados para uma semana tranquila.</p></div><span class="coming-soon">Agendamento em breve</span></div>
+          <div class="page-panel"><div class="panel-heading"><div><h2>Atendimentos</h2><p>A agenda será exibida aqui quando você adicionar consultas.</p></div><span class="date-pill" id="schedule-current-date">Hoje</span></div><div class="appointment-list"><p class="empty-state">Nenhum atendimento cadastrado nesta demonstração.</p></div></div>
+        </section>
+
+        <section class="section-view" id="view-recipes">
+          <div class="welcome"><div><p class="eyebrow">Inspiração saudável</p><h1>Receitas</h1><p>Ideias práticas e nutritivas para compartilhar com seus pacientes.</p></div><span class="coming-soon">Cadastro de receitas em breve</span></div>
+          <div class="recipe-grid">
+            <article class="recipe-card"><div class="recipe-art" aria-hidden="true">🥣</div><div class="recipe-copy"><h3>Bowl de frutas e aveia</h3><p>Um café da manhã colorido, rico em fibras e fácil de preparar.</p><div class="recipe-meta"><span>⏱ 10 min</span><span>☀️ Café da manhã</span></div></div></article>
+            <article class="recipe-card"><div class="recipe-art" aria-hidden="true">🥗</div><div class="recipe-copy"><h3>Salada completa da estação</h3><p>Uma combinação leve com vegetais, grãos e proteína.</p><div class="recipe-meta"><span>⏱ 20 min</span><span>🥬 Almoço</span></div></div></article>
+            <article class="recipe-card"><div class="recipe-art" aria-hidden="true">🍓</div><div class="recipe-copy"><h3>Iogurte com frutas vermelhas</h3><p>Lanche simples e delicioso para uma pausa gostosa.</p><div class="recipe-meta"><span>⏱ 5 min</span><span>🍎 Lanche</span></div></div></article>
+          </div>
+        </section>
+
+        <section class="section-view" id="view-reports">
+          <div class="welcome"><div><p class="eyebrow">Acompanhe seu crescimento</p><h1>Relatórios</h1><p>Uma visão clara da evolução do seu consultório.</p></div></div>
+          <div class="stats"><article class="stat-card"><div class="stat-top"><span>Pacientes cadastrados</span><span class="stat-icon">♙</span></div><div class="stat-value"><strong id="report-patient-total">0</strong><span>Na sua conta</span></div><div class="stat-foot">dados atualizados</div></article><article class="stat-card"><div class="stat-top"><span>Planos alimentares</span><span class="stat-icon">＋</span></div><div class="stat-value"><strong id="report-plan-total">0</strong><span>Na sua conta</span></div><div class="stat-foot">planos cadastrados</div></article></div>
+          <section class="page-panel macro-report">
+            <div class="panel-heading macro-heading"><div><h2>Registro alimentar — últimos 7 dias</h2><p>Proporção estimada de energia e totais informados pelo paciente.</p></div><label class="macro-filter-label" for="macro-patient-filter">Paciente<select id="macro-patient-filter"><option value="">Todos os pacientes</option></select></label></div>
+            <div class="macro-legend" aria-label="Legenda do gráfico"><span><i class="macro-carb"></i>Carboidratos</span><span><i class="macro-protein"></i>Proteínas</span><span><i class="macro-fat"></i>Gorduras</span></div>
+            <div id="macro-chart" class="macro-chart" role="img" aria-label="Gráfico de macronutrientes dos últimos sete dias"></div>
+            <p class="form-hint">As barras mostram a proporção estimada de energia (4 kcal/g para carboidratos e proteínas, 9 kcal/g para gorduras); os gramas são exibidos ao lado. Não há meta automática: ajuste a interpretação ao plano individual.</p>
+          </section>
+          <section class="page-panel allergy-report">
+            <div class="panel-heading"><div><h2>Alergias e restrições informadas</h2><p>Confira estas informações antes de orientar ou montar um plano.</p></div></div>
+            <div id="allergy-summary" class="allergy-summary"></div>
+          </section>
+        </section>
+        <section class="section-view nutritionist-only" id="view-messages">
+          <div class="welcome"><div><p class="eyebrow">Comunicação</p><h1>Dúvidas dos pacientes</h1><p>Mensagens recebidas pelo formulário do portal do paciente.</p></div></div>
+          <div id="patient-messages" class="message-list"></div>
+        </section>
+        <section class="section-view" id="view-admin">
+          <div class="welcome"><div><p class="eyebrow">Administração</p><h1>Contas cadastradas</h1><p>Consulte as contas de demonstração salvas neste navegador.</p></div></div>
+          <div class="page-panel"><div class="table-wrap"><table class="data-table"><caption class="sr-only">Contas do NutriFlow cadastradas</caption><thead><tr><th>NOME</th><th>E-MAIL</th><th>TIPO DE CONTA</th><th>CADASTRO</th></tr></thead><tbody id="accounts-table"></tbody></table></div></div>
+        </section>
+        <section class="section-view patient-only" id="view-portal" hidden>
+          <div class="welcome"><div><p class="eyebrow">Sua alimentação</p><h1>Olá, <span id="portal-patient-name">Paciente</span></h1><p>Acompanhe seu plano, registre refeições e converse com o nutricionista.</p></div></div>
+          <div id="patient-plan-list" class="patient-plan-list"><p class="empty-state">Carregando seu plano...</p></div>
+          <section class="page-panel patient-profile-panel">
+            <div class="panel-heading"><div><h2>Meu objetivo e cuidados</h2><p>Conte ao nutricionista seu objetivo e alergias ou restrições.</p></div></div>
+            <form id="patient-profile-form" class="form-grid">
+              <div class="form-field"><label for="patient-profile-goal">Objetivo principal</label><input id="patient-profile-goal" name="goal" maxlength="160" placeholder="Ex.: melhorar minha alimentação"></div>
+              <div class="form-field"><label for="patient-profile-allergies">Alergias ou restrições alimentares</label><textarea id="patient-profile-allergies" name="allergies" rows="3" maxlength="500" placeholder="Descreva ou deixe em branco"></textarea></div>
+              <button type="submit" class="button-primary">Atualizar informações</button>
+            </form>
+          </section>
+          <section class="page-panel">
+            <div class="panel-heading"><div><h2>Meu registro alimentar</h2><p>Anote o que comeu e, se souber, uma estimativa dos macronutrientes.</p></div></div>
+            <form id="food-log-form" class="form-grid food-log-form">
+              <div class="form-field"><label for="food-meal">Refeição</label><select id="food-meal" name="meal"><option>Café da manhã</option><option>Lanche da manhã</option><option>Almoço</option><option>Lanche da tarde</option><option>Jantar</option><option>Ceia</option><option>Outro</option></select></div>
+              <div class="form-field"><label for="food-description">O que comeu</label><input id="food-description" name="description" maxlength="160" required placeholder="Ex.: arroz, feijão e legumes"></div>
+              <div class="food-nutrients">
+                <div class="form-field"><label for="food-carbs">Carboidratos (g)</label><input id="food-carbs" name="carbs" type="number" min="0" max="2000" step="0.1" value="0" required></div>
+                <div class="form-field"><label for="food-protein">Proteínas (g)</label><input id="food-protein" name="protein" type="number" min="0" max="2000" step="0.1" value="0" required></div>
+                <div class="form-field"><label for="food-fat">Gorduras (g)</label><input id="food-fat" name="fat" type="number" min="0" max="2000" step="0.1" value="0" required></div>
+              </div>
+              <p class="form-hint">Se não souber um valor, mantenha 0; estimativas são bem-vindas. O gráfico ajuda no acompanhamento, não substitui orientação profissional.</p>
+              <button type="submit" class="button-primary">Salvar registro</button>
+            </form>
+            <div id="patient-food-logs" class="food-log-list"></div>
+          </section>
+          <section class="page-panel">
+            <div class="panel-heading"><div><h2>Fale com o nutricionista</h2><p>Envie uma dúvida para conversar sobre seu acompanhamento.</p></div></div>
+            <p class="form-hint">Demonstração local: a mensagem fica salva neste navegador e aparece no painel do nutricionista quando ele acessar os mesmos dados.</p>
+            <form id="patient-message-form" class="form-grid">
+              <div class="form-field"><label for="patient-message">Sua dúvida</label><textarea id="patient-message" name="message" rows="4" maxlength="1000" required placeholder="Escreva sua mensagem"></textarea></div>
+              <button type="submit" class="button-primary">Enviar dúvida</button>
+            </form>
+            <div id="patient-message-history" class="message-list"></div>
+          </section>
+        </section>
+      </div>
+    </main>
+  </div>
+
+  <div class="modal-backdrop" id="patient-modal" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+    <div class="modal">
+      <div class="modal-heading"><div><h2 id="modal-title">Adicionar paciente</h2><p>Preencha os dados para criar um novo cadastro.</p></div><button class="icon-button" id="close-modal" aria-label="Fechar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="m6 6 12 12M18 6 6 18"/></svg></button></div>
+      <form id="patient-form"><div class="form-grid"><div class="form-field"><label for="patient-name-input">Nome completo</label><input id="patient-name-input" name="name" maxlength="100" required placeholder="Ex.: Ana Silva"></div><div class="form-field"><label for="patient-email-input">E-mail</label><input id="patient-email-input" name="email" type="email" maxlength="254" required placeholder="ana@email.com"></div><div class="form-field"><label for="patient-goal-input">Objetivo principal</label><input id="patient-goal-input" name="goal" maxlength="160" placeholder="Ex.: reeducação alimentar"></div><div class="form-field"><label for="patient-allergies-input">Alergias ou restrições alimentares</label><textarea id="patient-allergies-input" name="allergies" rows="3" maxlength="500" placeholder="Se não informado, deixe em branco"></textarea></div></div><p class="form-hint">Peça ao paciente que crie a conta com este mesmo e-mail para acessar o plano. Confirme alergias com o paciente.</p><div class="modal-actions"><button type="button" class="button-secondary" id="cancel-modal">Cancelar</button><button type="submit" class="button-primary">Salvar paciente</button></div></form>
+    </div>
+  </div>
+  <div class="modal-backdrop" id="plan-modal" role="dialog" aria-modal="true" aria-labelledby="plan-modal-title">
+    <div class="modal">
+      <div class="modal-heading"><div><h2 id="plan-modal-title">Novo plano alimentar</h2><p>Associe as refeições a um paciente.</p></div><button class="icon-button" id="close-plan-modal" aria-label="Fechar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="m6 6 12 12M18 6 6 18"/></svg></button></div>
+      <form id="plan-form"><div class="form-grid">
+        <div class="form-field"><label for="plan-patient">Paciente</label><select id="plan-patient" name="patientId" required></select></div>
+        <div class="form-field"><label for="plan-title">Nome do plano</label><input id="plan-title" name="title" maxlength="100" required placeholder="Ex.: Plano alimentar semanal"></div>
+        <fieldset class="meal-schedule-fieldset">
+          <legend>Refeições e horários</legend>
+          <p class="form-hint">Organize cada refeição e informe o horário combinado. Deixe vazia a refeição que não se aplica.</p>
+          <div class="meal-schedule-editor">
+            <div class="plan-meal-item" data-meal-id="breakfast"><label for="meal-breakfast-time">Café da manhã</label><input id="meal-breakfast-time" name="time-breakfast" type="time" aria-label="Horário do café da manhã"><textarea name="meal-breakfast" aria-label="Alimentos e orientações do café da manhã" rows="2" maxlength="1000" placeholder="Alimentos e orientações"></textarea></div>
+            <div class="plan-meal-item" data-meal-id="morning-snack"><label for="meal-morning-snack-time">Lanche da manhã</label><input id="meal-morning-snack-time" name="time-morning-snack" type="time" aria-label="Horário do lanche da manhã"><textarea name="meal-morning-snack" aria-label="Alimentos e orientações do lanche da manhã" rows="2" maxlength="1000" placeholder="Alimentos e orientações"></textarea></div>
+            <div class="plan-meal-item" data-meal-id="lunch"><label for="meal-lunch-time">Almoço</label><input id="meal-lunch-time" name="time-lunch" type="time" aria-label="Horário do almoço"><textarea name="meal-lunch" aria-label="Alimentos e orientações do almoço" rows="2" maxlength="1000" placeholder="Alimentos e orientações"></textarea></div>
+            <div class="plan-meal-item" data-meal-id="afternoon-snack"><label for="meal-afternoon-snack-time">Lanche da tarde</label><input id="meal-afternoon-snack-time" name="time-afternoon-snack" type="time" aria-label="Horário do lanche da tarde"><textarea name="meal-afternoon-snack" aria-label="Alimentos e orientações do lanche da tarde" rows="2" maxlength="1000" placeholder="Alimentos e orientações"></textarea></div>
+            <div class="plan-meal-item" data-meal-id="dinner"><label for="meal-dinner-time">Jantar</label><input id="meal-dinner-time" name="time-dinner" type="time" aria-label="Horário do jantar"><textarea name="meal-dinner" aria-label="Alimentos e orientações do jantar" rows="2" maxlength="1000" placeholder="Alimentos e orientações"></textarea></div>
+            <div class="plan-meal-item" data-meal-id="supper"><label for="meal-supper-time">Ceia</label><input id="meal-supper-time" name="time-supper" type="time" aria-label="Horário da ceia"><textarea name="meal-supper" aria-label="Alimentos e orientações da ceia" rows="2" maxlength="1000" placeholder="Alimentos e orientações"></textarea></div>
+          </div>
+        </fieldset>
+        <div class="form-field"><label for="plan-meals">Orientações gerais</label><textarea id="plan-meals" name="meals" rows="3" maxlength="2000" placeholder="Observações e orientações complementares"></textarea></div>
+        <p class="form-hint">Demonstração local somente: não inclua informações reais de saúde.</p>
+      </div><div class="modal-actions"><button type="button" class="button-secondary" id="cancel-plan-modal">Cancelar</button><button type="submit" class="button-primary">Salvar plano</button></div></form>
+    </div>
+  </div>
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+  <script src="script.js" defer></script>
+</body>
+</html>

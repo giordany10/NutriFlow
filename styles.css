@@ -1,0 +1,954 @@
+/* Refinamentos visuais do NutriFlow. A base do layout continua no index.html. */
+:root {
+  --green: #2f7957;
+  --green-dark: #225d42;
+  --green-soft: #eaf3ed;
+  --shadow: 0 12px 32px rgba(34, 57, 44, .06);
+  accent-color: var(--green);
+}
+
+button:disabled {
+  cursor: not-allowed;
+  opacity: .68;
+}
+
+button.is-loading {
+  gap: 9px;
+}
+
+button.is-loading::after {
+  width: 13px;
+  height: 13px;
+  border: 2px solid currentColor;
+  border-right-color: transparent;
+  border-radius: 50%;
+  content: "";
+  animation: button-spin .7s linear infinite;
+}
+
+.section-view.active {
+  animation: view-enter .22s ease-out;
+}
+
+[hidden] {
+  display: none !important;
+}
+
+.high-contrast .quick-action {
+  border-color: #555;
+}
+
+.high-contrast .coming-soon {
+  background: #fff;
+  border: 1px solid #555;
+  color: #000;
+}
+
+.app,
+.auth-screen {
+  zoom: var(--accessibility-scale, 1);
+}
+
+.sr-only,
+.skip-link:not(:focus) {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.skip-link:focus {
+  position: fixed;
+  z-index: 30;
+  top: 10px;
+  left: 10px;
+  padding: 12px 16px;
+  color: #fff;
+  background: var(--green-dark);
+  border-radius: 8px;
+}
+
+.auth-screen {
+  min-height: 100vh;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  background:
+    radial-gradient(ellipse at 15% 15%, rgba(114, 166, 120, .16), transparent 34%),
+    radial-gradient(ellipse at 90% 85%, rgba(226, 186, 128, .15), transparent 30%),
+    var(--canvas);
+}
+
+.auth-card {
+  width: min(100%, 430px);
+  padding: clamp(24px, 6vw, 42px);
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: 20px;
+  box-shadow: 0 24px 70px rgba(34, 57, 44, .1);
+}
+
+.auth-brand {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  margin-bottom: 32px;
+  color: inherit;
+  text-decoration: none;
+}
+
+.auth-brand .brand-mark {
+  display: grid;
+  place-items: center;
+  width: 38px;
+  height: 38px;
+  border-radius: 12px;
+  background: var(--green-soft);
+  font-size: 19px;
+}
+
+.auth-card h1 {
+  font-size: clamp(23px, 6vw, 28px);
+}
+
+.auth-description,
+.auth-privacy {
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.65;
+}
+
+.auth-card form {
+  margin-top: 24px;
+}
+
+.auth-card .form-field input {
+  height: 44px;
+}
+
+.auth-submit {
+  width: 100%;
+  min-height: 44px;
+  margin-top: 20px;
+}
+
+.auth-submit:disabled {
+  cursor: not-allowed;
+  opacity: .6;
+}
+
+.auth-privacy {
+  margin-top: 12px;
+}
+
+.auth-toggle-copy {
+  margin: 20px 0 0;
+  color: #66736a;
+  text-align: center;
+  font-size: 12px;
+}
+
+.auth-error {
+  margin: 14px 0 0;
+  padding: 11px 12px;
+  color: #8d302b;
+  background: #fff2f0;
+  border-radius: 8px;
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.auth-privacy {
+  margin: 18px 0 0;
+  padding-top: 14px;
+  border-top: 1px solid var(--line);
+  text-align: center;
+  font-size: 10px;
+}
+
+.accessibility-tools {
+  margin: 0 2px 12px;
+  padding: 9px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+}
+
+.accessibility-tools summary {
+  padding: 4px;
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 700;
+  cursor: pointer;
+  list-style-position: inside;
+}
+
+.accessibility-actions {
+  display: flex;
+  gap: 6px;
+  padding-top: 9px;
+}
+
+.accessibility-actions .button-secondary {
+  min-height: 32px;
+  padding: 6px 9px;
+}
+
+.accessibility-actions #contrast-toggle {
+  font-size: 10px;
+}
+
+.dashboard-stats {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.section-view#view-reports > .stats {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  max-width: 720px;
+}
+
+.quick-actions {
+  display: grid;
+}
+
+.quick-action {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  min-height: 68px;
+  padding: 10px 4px;
+  border: 0;
+  border-top: 1px solid var(--line);
+  background: transparent;
+  color: var(--ink);
+  text-align: left;
+}
+
+.quick-action:first-child {
+  border-top: 0;
+}
+
+.quick-action:hover {
+  padding-right: 9px;
+  padding-left: 9px;
+  border-radius: 9px;
+  background: #f7faf6;
+}
+
+.quick-action-icon {
+  display: grid;
+  flex: 0 0 36px;
+  width: 36px;
+  height: 36px;
+  place-items: center;
+  border-radius: 10px;
+  background: var(--green-soft);
+  color: var(--green);
+  font-size: 17px;
+}
+
+.quick-action > span:nth-child(2) {
+  display: grid;
+  flex: 1;
+  gap: 4px;
+}
+
+.quick-action strong {
+  font-size: 12px;
+  font-weight: 680;
+}
+
+.quick-action small {
+  color: var(--muted);
+  font-size: 10px;
+  line-height: 1.45;
+}
+
+.quick-action-arrow {
+  color: var(--green);
+  transition: transform .18s ease;
+}
+
+.quick-action:hover .quick-action-arrow {
+  transform: translateX(3px);
+}
+
+.plan-card-top,
+.plan-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.plan-actions .button-secondary {
+  padding: 6px 9px;
+}
+
+.plan-actions .plan-delete {
+  color: #a33b35;
+}
+
+.plan-actions .plan-delete:hover {
+  border-color: #e6b8b5;
+  background: #fff8f7;
+}
+
+.coming-soon {
+  padding: 8px 11px;
+  border-radius: 20px;
+  background: #f0f2ef;
+  color: #647168;
+  font-size: 11px;
+  font-weight: 650;
+  white-space: nowrap;
+}
+
+.form-field textarea {
+  width: 100%;
+  padding: 11px;
+  border: 1px solid #e7ebe6;
+  border-radius: 8px;
+  background: white;
+  color: var(--ink);
+  font-size: 12px;
+  line-height: 1.6;
+  resize: vertical;
+}
+
+.form-field textarea:focus {
+  border-color: #84ad8f;
+  box-shadow: 0 0 0 3px rgba(85, 140, 99, .1);
+  outline: 0;
+}
+
+.form-hint {
+  margin: 0;
+  color: var(--muted);
+  font-size: 11px;
+  line-height: 1.6;
+}
+
+.form-field input[type="number"] {
+  min-width: 0;
+}
+
+.patient-profile-panel,
+#view-portal > .page-panel,
+.macro-report,
+.allergy-report {
+  margin-top: 16px;
+}
+
+.food-nutrients {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.food-log-list,
+.message-list,
+.allergy-summary {
+  display: grid;
+  gap: 10px;
+  margin-top: 15px;
+}
+
+.food-log-item,
+.message-card,
+.allergy-item {
+  padding: 13px;
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  background: #fff;
+}
+
+.food-log-item > div,
+.message-card > div {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.food-log-item strong,
+.message-card strong,
+.allergy-item strong {
+  font-size: 12px;
+}
+
+.food-log-item span,
+.message-card span,
+.message-card small,
+.allergy-item small {
+  color: var(--muted);
+  font-size: 10px;
+}
+
+.food-log-item p,
+.message-card p {
+  margin: 8px 0 0;
+  color: #536057;
+  font-size: 11px;
+  line-height: 1.6;
+  overflow-wrap: anywhere;
+  white-space: pre-wrap;
+}
+
+.message-card.is-read {
+  background: #f9fbf9;
+}
+
+.message-card .button-secondary {
+  margin-top: 12px;
+}
+
+.allergy-item {
+  display: grid;
+  gap: 6px;
+  border-left: 3px solid #d87861;
+}
+
+.allergy-item span {
+  color: #713e34;
+  font-size: 11px;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+}
+
+.macro-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 13px;
+  margin-bottom: 15px;
+}
+
+.macro-legend span {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: #58645b;
+  font-size: 10px;
+}
+
+.macro-legend i {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+}
+
+.macro-carb { background-color: #4a9367; }
+.macro-protein { background-color: #e3a34c; }
+.macro-fat { background-color: #7d8fc0; }
+
+.macro-chart {
+  display: grid;
+  gap: 12px;
+}
+
+.macro-heading {
+  align-items: flex-start;
+}
+
+.macro-filter-label {
+  display: grid;
+  gap: 5px;
+  min-width: 180px;
+  color: #69766d;
+  font-size: 10px;
+  font-weight: 650;
+}
+
+.macro-filter-label select {
+  width: 100%;
+  min-height: 36px;
+  padding: 6px 9px;
+  border: 1px solid #e7ebe6;
+  border-radius: 8px;
+  background: #fff;
+  color: var(--ink);
+  font: inherit;
+}
+
+.macro-day {
+  display: grid;
+  grid-template-columns: 58px minmax(80px, 1fr) minmax(160px, 1.2fr);
+  align-items: center;
+  gap: 10px;
+}
+
+.macro-day-label {
+  color: #536057;
+  font-size: 10px;
+  font-weight: 650;
+  text-transform: capitalize;
+}
+
+.macro-stack {
+  display: flex;
+  min-width: 0;
+  height: 13px;
+  overflow: hidden;
+  border-radius: 8px;
+  background: #f0f2ef;
+}
+
+.macro-stack span {
+  display: block;
+  height: 100%;
+}
+
+.macro-day-total {
+  color: var(--muted);
+  font-size: 9px;
+  line-height: 1.4;
+}
+
+.signup-patient-field textarea {
+  min-height: 56px;
+}
+
+.meal-schedule-fieldset {
+  min-width: 0;
+  margin: 0;
+  padding: 14px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+}
+
+.meal-schedule-fieldset legend {
+  padding: 0 6px;
+  color: var(--ink);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.meal-schedule-fieldset > .form-hint {
+  margin-bottom: 12px;
+}
+
+.meal-schedule-editor {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.plan-meal-item {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 100px;
+  gap: 7px;
+  padding: 10px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+}
+
+.plan-meal-item label {
+  align-self: center;
+  color: var(--ink);
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.plan-meal-item input,
+.plan-meal-item textarea,
+.message-reply-form textarea {
+  min-width: 0;
+  width: 100%;
+  padding: 9px;
+  border: 1px solid #e7ebe6;
+  border-radius: 7px;
+  background: white;
+  color: var(--ink);
+  font: inherit;
+  font-size: 11px;
+}
+
+.plan-meal-item textarea {
+  grid-column: 1 / -1;
+  resize: vertical;
+}
+
+.plan-meal-list {
+  display: grid;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.plan-meal {
+  padding: 11px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+}
+
+.plan-meal > div {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.plan-meal h4 {
+  margin: 0;
+  color: var(--green-dark);
+  font-size: 11px;
+}
+
+.plan-meal time {
+  padding: 4px 7px;
+  border-radius: 20px;
+  background: var(--green-soft);
+  color: var(--green-dark);
+  font-size: 10px;
+  font-weight: 700;
+}
+
+.plan-meal p {
+  margin: 7px 0 0;
+  color: #536057;
+  font-size: 11px;
+  line-height: 1.55;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.plan-general-notes {
+  margin-top: 12px !important;
+}
+
+.patient-plan-list {
+  display: grid;
+  gap: 14px;
+}
+
+.message-reply {
+  margin-top: 12px;
+  padding: 11px;
+  border-left: 3px solid var(--green);
+  border-radius: 6px;
+  background: var(--green-soft);
+}
+
+.message-reply > strong {
+  color: var(--green-dark);
+  font-size: 10px;
+}
+
+.message-reply p {
+  margin-top: 5px;
+}
+
+.message-reply-form {
+  display: grid;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.message-reply-form label {
+  color: #69766d;
+  font-size: 10px;
+  font-weight: 650;
+}
+
+.message-reply-form textarea {
+  resize: vertical;
+}
+
+.message-reply-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.message-reply-actions small {
+  color: var(--muted);
+}
+
+.plan-patient {
+  margin-bottom: 8px !important;
+  color: var(--green-dark) !important;
+  font-weight: 650;
+}
+
+.plan-meals {
+  overflow-wrap: anywhere;
+  white-space: pre-wrap;
+}
+
+.high-contrast {
+  --ink: #000;
+  --muted: #343a35;
+  --green: #07532a;
+  --green-dark: #003d1b;
+  --green-soft: #d8f4df;
+  --paper: #fff;
+  --canvas: #fff;
+  --line: #666;
+}
+
+.high-contrast .panel,
+.high-contrast .stat-card,
+.high-contrast .page-panel,
+.high-contrast .meal-plan-card,
+.high-contrast .recipe-card,
+.high-contrast .auth-card {
+  border-color: #555;
+  box-shadow: none;
+}
+
+.high-contrast .button-secondary,
+.high-contrast .search input,
+.high-contrast .macro-filter-label select,
+.high-contrast .form-field input,
+.high-contrast .form-field select,
+.high-contrast .form-field textarea {
+  border-color: #555;
+  color: #000;
+}
+
+.high-contrast .plan-meal-item,
+.high-contrast .plan-meal,
+.high-contrast .meal-schedule-fieldset {
+  border-color: #555;
+}
+
+.high-contrast .plan-meal-item input,
+.high-contrast .plan-meal-item textarea,
+.high-contrast .message-reply-form textarea {
+  border-color: #555;
+}
+
+.high-contrast .food-log-item,
+.high-contrast .message-card,
+.high-contrast .allergy-item {
+  border-color: #555;
+}
+
+.high-contrast :focus-visible {
+  outline-color: #000;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+button,
+.stat-card,
+.panel,
+.patient-row,
+.meal-plan-card,
+.recipe-card,
+.nav-link {
+  transition: background-color .18s ease, border-color .18s ease, color .18s ease, box-shadow .18s ease, transform .18s ease;
+}
+
+.stat-card:hover,
+.panel:hover,
+.meal-plan-card:hover,
+.recipe-card:hover {
+  border-color: #e1eae1;
+  box-shadow: 0 16px 38px rgba(34, 57, 44, .09);
+  transform: translateY(-2px);
+}
+
+.nav-link {
+  min-height: 42px;
+}
+
+.button-primary,
+.button-secondary {
+  min-height: 38px;
+}
+
+.button-primary:active,
+.button-secondary:active,
+.icon-button:active {
+  transform: scale(.98);
+}
+
+.search input,
+.form-field input,
+.form-field select {
+  transition: border-color .18s ease, box-shadow .18s ease;
+}
+
+.search input:focus,
+.form-field input:focus,
+.form-field select:focus {
+  border-color: #84ad8f;
+  box-shadow: 0 0 0 3px rgba(85, 140, 99, .1);
+  outline: 0;
+}
+
+.patient-row:hover {
+  padding-right: 7px;
+  padding-left: 7px;
+  border-radius: 9px;
+  background: #f8faf7;
+}
+
+.appointment {
+  transition: background-color .18s ease;
+}
+
+.appointment:hover {
+  background: #fbfcfa;
+}
+
+.modal-backdrop {
+  backdrop-filter: blur(3px);
+}
+
+.modal {
+  animation: modal-enter .2s ease-out;
+}
+
+.toast {
+  max-width: min(390px, calc(100vw - 32px));
+  line-height: 1.5;
+}
+
+.day strong {
+  position: relative;
+}
+
+.day.has-event strong::after {
+  position: absolute;
+  top: 31px;
+  left: 50%;
+  margin: 0;
+  transform: translateX(-50%);
+}
+
+.meal-plan-meta {
+  gap: 8px;
+}
+
+.meal-plan-meta span:last-child {
+  text-align: right;
+}
+
+@keyframes modal-enter {
+  from { opacity: 0; transform: translateY(8px) scale(.99); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+@keyframes view-enter {
+  from { opacity: 0; transform: translateY(5px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes button-spin {
+  to { transform: rotate(360deg); }
+}
+
+@media (max-width: 620px) {
+  .auth-screen {
+    padding: 14px;
+  }
+
+  .auth-card {
+    padding: 25px 20px;
+  }
+
+  .accessibility-actions #contrast-toggle {
+    flex: 1;
+  }
+
+  .dashboard-stats {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .food-nutrients {
+    grid-template-columns: 1fr;
+  }
+
+  .meal-schedule-editor {
+    grid-template-columns: 1fr;
+  }
+
+  .plan-meal-item {
+    grid-template-columns: minmax(0, 1fr) 92px;
+  }
+
+  .macro-day {
+    grid-template-columns: 46px minmax(45px, .7fr) minmax(105px, 1.3fr);
+    gap: 6px;
+  }
+
+  .macro-day-total {
+    font-size: 8px;
+  }
+
+  .macro-heading {
+    flex-direction: column;
+  }
+
+  .macro-filter-label {
+    width: 100%;
+  }
+
+  .food-log-item > div,
+  .message-card > div {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .message-reply-actions > button {
+    width: 100%;
+  }
+
+  .sidebar {
+    width: min(265px, calc(100vw - 32px));
+    flex-basis: auto;
+  }
+
+  .stat-card:hover,
+  .panel:hover,
+  .meal-plan-card:hover,
+  .recipe-card:hover {
+    transform: none;
+  }
+
+  .toast {
+    right: 16px;
+    bottom: max(16px, env(safe-area-inset-bottom));
+  }
+
+  .modal-backdrop {
+    padding: 10px;
+    align-items: flex-end;
+  }
+
+  .modal {
+    width: 100%;
+    max-height: 92dvh;
+    padding: 18px;
+    border-radius: 14px 14px 10px 10px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+
+  *,
+  *::before,
+  *::after {
+    animation-duration: .01ms !important;
+    transition-duration: .01ms !important;
+  }
+}
