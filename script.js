@@ -330,7 +330,7 @@ function renderPatients(search = "") {
   const label = filtered.length === 1 ? "paciente cadastrado" : "pacientes cadastrados";
   document.getElementById("patient-list-count").textContent = `${filtered.length} ${label}`;
   if (!filtered.length) {
-    tbody.innerHTML = `<tr><td colspan="6" class="empty-state">${term
+    tbody.innerHTML = `<tr><td colspan="7" class="empty-state">${term
       ? "Nenhum paciente encontrado. Tente outro nome ou objetivo."
       : "Ainda não há pacientes cadastrados. Use “Adicionar paciente” para começar."}</td></tr>`;
     return;
@@ -349,6 +349,7 @@ function renderPatients(search = "") {
       <td>${escapeHTML(patient.last || "Ainda não consultou")}</td>
       <td><span class="status ${pending ? "pending" : "good"}">${escapeHTML(patient.status || "Novo paciente")}</span></td>
       <td>${access}</td>
+      <td><button type="button" class="button-secondary patient-delete" data-delete-patient="${escapeHTML(patient.id)}" aria-label="Excluir paciente ${escapeHTML(patient.name)}">Excluir</button></td>
     </tr>`;
   }).join("");
 }
@@ -659,6 +660,50 @@ function deletePlan(planId) {
   } catch (error) {
     console.error("Erro ao excluir plano:", error);
     showToast(`Não foi possível excluir o plano: ${error.message}`);
+  }
+}
+
+function deletePatient(patientId) {
+  if (!state.isNutritionist) return;
+  const patient = state.patients.find(item => item.id === patientId);
+  if (!patient) {
+    showToast("Não foi possível encontrar este paciente.");
+    return;
+  }
+  if (!window.confirm(`Excluir ${patient.name} e todos os dados associados, incluindo planos e acesso à conta? Esta ação não pode ser desfeita.`)) return;
+  try {
+    const data = getStore();
+    const storedPatient = data.patients.find(item =>
+      item.id === patientId && item.ownerId === state.user.id
+    );
+    if (!storedPatient) throw new Error("Não foi possível localizar este paciente.");
+    const patientEmail = String(storedPatient.email || "").toLowerCase();
+    const accountIds = data.accounts
+      .filter(account => account.role === "patient" && (
+        account.id === storedPatient.accountId ||
+        (patientEmail && String(account.email || "").toLowerCase() === patientEmail)
+      ))
+      .map(account => account.id);
+    const belongsToPatient = item => item.patientId === patientId && item.ownerId === state.user.id;
+
+    data.patients = data.patients.filter(item =>
+      item.id !== patientId || item.ownerId !== state.user.id
+    );
+    data.plans = data.plans.filter(item => !belongsToPatient(item));
+    data.foodLogs = data.foodLogs.filter(item => !belongsToPatient(item));
+    data.messages = data.messages.filter(item => !belongsToPatient(item));
+    data.accounts = data.accounts.filter(account => !accountIds.includes(account.id));
+    saveStore(data);
+
+    state.patients = state.patients.filter(item => item.id !== patientId);
+    state.plans = state.plans.filter(item => item.patientId !== patientId);
+    state.foodLogs = state.foodLogs.filter(item => item.patientId !== patientId);
+    state.messages = state.messages.filter(item => item.patientId !== patientId);
+    renderAll();
+    showToast("Paciente e dados associados excluídos.");
+  } catch (error) {
+    console.error("Erro ao excluir paciente:", error);
+    showToast(`Não foi possível excluir o paciente: ${error.message}`);
   }
 }
 
@@ -1142,6 +1187,10 @@ document.getElementById("meal-plans-list").addEventListener("click", event => {
   const deleteButton = event.target.closest("[data-delete-plan]");
   if (editButton) editPlan(editButton.dataset.editPlan);
   if (deleteButton) deletePlan(deleteButton.dataset.deletePlan);
+});
+document.getElementById("patients-table").addEventListener("click", event => {
+  const deleteButton = event.target.closest("[data-delete-patient]");
+  if (deleteButton) deletePatient(deleteButton.dataset.deletePatient);
 });
 document.getElementById("patient-messages").addEventListener("click", event => {
   const button = event.target.closest("[data-read-message]");

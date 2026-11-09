@@ -299,6 +299,15 @@ button.is-loading::after {
   background: #fff8f7;
 }
 
+.patient-delete {
+  color: #a33b35;
+}
+
+.patient-delete:hover {
+  border-color: #e6b8b5;
+  background: #fff8f7;
+}
+
 .coming-soon {
   padding: 8px 11px;
   border-radius: 20px;
