@@ -248,6 +248,10 @@
             <input id="auth-goal" name="goal" maxlength="160" placeholder="Ex.: melhorar minha alimentação">
           </div>
           <div class="form-field signup-patient-field" hidden>
+            <label for="auth-birth-date">Data de nascimento</label>
+            <input id="auth-birth-date" name="birthDate" type="date" autocomplete="bday">
+          </div>
+          <div class="form-field signup-patient-field" hidden>
             <label for="auth-height">Altura (cm)</label>
             <input id="auth-height" name="heightCm" type="number" min="80" max="250" step="0.1" inputmode="decimal" placeholder="Ex.: 165">
           </div>
@@ -288,6 +292,7 @@
       <nav class="nav-list nutritionist-only">
         <button class="nav-link active nutritionist-only" data-view="dashboard"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="8" height="8" rx="2"/><rect x="13" y="3" width="8" height="5" rx="2"/><rect x="13" y="10" width="8" height="11" rx="2"/><rect x="3" y="13" width="8" height="8" rx="2"/></svg>Visão geral</button>
         <button class="nav-link" data-view="patients"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="10" cy="7" r="4"/><path d="M20 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg>Pacientes<span class="nav-count" id="patient-count">24</span></button>
+        <button class="nav-link" data-view="anthropometry">Antropometria</button>
         <button class="nav-link" data-view="plans"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2Z"/><path d="M8 7h8M8 11h6"/></svg>Planos alimentares</button>
         <button class="nav-link" data-view="schedule"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M16 3v4M8 3v4M3 11h18"/><path d="m9 16 2 2 4-4"/></svg>Agenda</button>
         <button class="nav-link" data-view="recipes"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M7 3h10l1 5H6l1-5Z"/><path d="M5 8h14l-1 13H6L5 8Z"/><path d="M9 12h6M9 16h6"/></svg>Receitas</button>
@@ -354,7 +359,29 @@
 
         <section class="section-view" id="view-patients">
           <div class="welcome"><div><p class="eyebrow">Seu consultório</p><h1>Pacientes</h1><p>Organize os cadastros e acompanhe cada jornada.</p></div><button class="button-primary" data-open-modal><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>Adicionar paciente</button></div>
-          <div class="page-panel"><div class="panel-heading"><div><h2>Todos os pacientes</h2><p id="patient-list-count">0 pacientes cadastrados</p></div><button class="button-secondary" id="clear-search">Limpar busca</button></div><div class="table-wrap"><table class="data-table"><caption class="sr-only">Pacientes da sua conta</caption><thead><tr><th>PACIENTE</th><th>OBJETIVO</th><th>ALERGIAS / RESTRIÇÕES</th><th>ÚLTIMA CONSULTA</th><th>STATUS</th><th>ACESSO</th><th>AÇÕES</th></tr></thead><tbody id="patients-table"></tbody></table></div></div>
+          <div class="page-panel"><div class="panel-heading"><div><h2>Todos os pacientes</h2><p id="patient-list-count">0 pacientes cadastrados</p></div><div class="patient-list-actions"><label class="age-filter-label" for="patient-age-filter">Faixa etária<select id="patient-age-filter"><option value="">Todas as idades</option><option value="children">Crianças · até 11 anos</option><option value="adolescents">Adolescentes · 12 a 17 anos</option><option value="adults">Adultos · 18 a 59 anos</option><option value="older-adults">60 anos ou mais</option><option value="unknown">Sem data de nascimento</option></select></label><button class="button-secondary" id="clear-search">Limpar busca</button></div></div><div class="table-wrap"><table class="data-table"><caption class="sr-only">Pacientes da sua conta</caption><thead><tr><th>PACIENTE</th><th>IDADE / FAIXA</th><th>OBJETIVO</th><th>ALERGIAS / RESTRIÇÕES</th><th>ÚLTIMA CONSULTA</th><th>STATUS</th><th>ACESSO</th><th>AÇÕES</th></tr></thead><tbody id="patients-table"></tbody></table></div></div>
+        </section>
+
+        <section class="section-view" id="view-anthropometry">
+          <div class="welcome"><div><p class="eyebrow">Acompanhamento individual</p><h1>Antropometria</h1><p>Registre medidas ao longo do tempo e consulte o histórico de cada paciente.</p></div></div>
+          <section class="page-panel">
+            <div class="panel-heading"><div><h2>Avaliação antropométrica</h2><p>O IMC é exibido como referência descritiva, sem diagnóstico ou meta automática.</p></div><label class="macro-filter-label" for="anthro-patient">Paciente<select id="anthro-patient"><option value="">Selecione um paciente</option></select></label></div>
+            <div id="anthro-patient-summary" class="anthro-patient-summary" aria-live="polite"><p class="empty-state">Selecione um paciente para consultar o acompanhamento.</p></div>
+            <form id="anthro-form" class="form-grid anthropometry-form">
+              <div class="form-field"><label for="anthro-date">Data da avaliação</label><input id="anthro-date" name="measuredAt" type="date" required></div>
+              <div class="form-field"><label for="anthro-weight">Peso (kg)</label><input id="anthro-weight" name="weightKg" type="number" min="20" max="400" step="0.1" inputmode="decimal" required></div>
+              <div class="form-field"><label for="anthro-height">Altura (cm)</label><input id="anthro-height" name="heightCm" type="number" min="80" max="250" step="0.1" inputmode="decimal" required></div>
+              <div class="form-field"><label for="anthro-waist">Circunferência da cintura (cm)</label><input id="anthro-waist" name="waistCm" type="number" min="30" max="250" step="0.1" inputmode="decimal"></div>
+              <div class="form-field"><label for="anthro-hip">Circunferência do quadril (cm)</label><input id="anthro-hip" name="hipCm" type="number" min="30" max="250" step="0.1" inputmode="decimal"></div>
+              <div class="form-field"><label for="anthro-arm">Circunferência do braço (cm)</label><input id="anthro-arm" name="armCm" type="number" min="10" max="100" step="0.1" inputmode="decimal"></div>
+              <p class="form-hint">Para menores de 18 anos, a interpretação do IMC exige referências específicas por idade e sexo. Avalie as medidas no contexto clínico.</p>
+              <button type="submit" class="button-primary" id="save-anthro-button">Salvar avaliação</button>
+            </form>
+          </section>
+          <section class="page-panel anthropometry-history">
+            <div class="panel-heading"><div><h2>Histórico de medidas</h2><p>As avaliações ficam organizadas por data.</p></div></div>
+            <div class="table-wrap"><table class="data-table"><caption class="sr-only">Histórico antropométrico do paciente selecionado</caption><thead><tr><th>DATA</th><th>PESO</th><th>ALTURA</th><th>IMC</th><th>CINTURA</th><th>QUADRIL</th><th>BRAÇO</th><th>AÇÕES</th></tr></thead><tbody id="anthro-history-table"><tr><td colspan="8" class="empty-state">Selecione um paciente para ver o histórico.</td></tr></tbody></table></div>
+          </section>
         </section>
 
         <section class="section-view" id="view-plans">
@@ -405,6 +432,7 @@
             <div class="panel-heading"><div><h2>Meu objetivo e cuidados</h2><p>Conte ao nutricionista seu objetivo e alergias ou restrições.</p></div></div>
             <form id="patient-profile-form" class="form-grid">
               <div class="form-field"><label for="patient-profile-goal">Objetivo principal</label><input id="patient-profile-goal" name="goal" maxlength="160" placeholder="Ex.: melhorar minha alimentação"></div>
+              <div class="form-field"><label for="patient-profile-birth-date">Data de nascimento</label><input id="patient-profile-birth-date" name="birthDate" type="date" autocomplete="bday"></div>
               <div class="form-field"><label for="patient-profile-height">Altura (cm)</label><input id="patient-profile-height" name="heightCm" type="number" min="80" max="250" step="0.1" inputmode="decimal" placeholder="Ex.: 165"></div>
               <div class="form-field"><label for="patient-profile-weight">Peso (kg)</label><input id="patient-profile-weight" name="weightKg" type="number" min="20" max="400" step="0.1" inputmode="decimal" placeholder="Ex.: 68"></div>
               <div class="form-field"><label for="patient-profile-allergies">Alergias ou restrições alimentares</label><textarea id="patient-profile-allergies" name="allergies" rows="3" maxlength="500" placeholder="Descreva ou deixe em branco"></textarea></div>
@@ -443,7 +471,7 @@
   <div class="modal-backdrop" id="patient-modal" role="dialog" aria-modal="true" aria-labelledby="modal-title">
     <div class="modal">
       <div class="modal-heading"><div><h2 id="modal-title">Adicionar paciente</h2><p>Preencha os dados para criar um novo cadastro.</p></div><button class="icon-button" id="close-modal" aria-label="Fechar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="m6 6 12 12M18 6 6 18"/></svg></button></div>
-      <form id="patient-form"><div class="form-grid"><div class="form-field"><label for="patient-name-input">Nome completo</label><input id="patient-name-input" name="name" maxlength="100" required placeholder="Ex.: Ana Silva"></div><div class="form-field"><label for="patient-email-input">E-mail</label><input id="patient-email-input" name="email" type="email" maxlength="254" required placeholder="ana@email.com"></div><div class="form-field"><label for="patient-goal-input">Objetivo principal</label><input id="patient-goal-input" name="goal" maxlength="160" placeholder="Ex.: reeducação alimentar"></div><div class="form-field"><label for="patient-height-input">Altura (cm)</label><input id="patient-height-input" name="heightCm" type="number" min="80" max="250" step="0.1" inputmode="decimal" placeholder="Ex.: 165"></div><div class="form-field"><label for="patient-weight-input">Peso (kg)</label><input id="patient-weight-input" name="weightKg" type="number" min="20" max="400" step="0.1" inputmode="decimal" placeholder="Ex.: 68"></div><div class="form-field"><label for="patient-allergies-input">Alergias ou restrições alimentares</label><textarea id="patient-allergies-input" name="allergies" rows="3" maxlength="500" placeholder="Se não informado, deixe em branco"></textarea></div></div><p class="form-hint">Peça ao paciente que crie a conta com este mesmo e-mail para acessar o plano. Confirme alergias com o paciente.</p><div class="modal-actions"><button type="button" class="button-secondary" id="cancel-modal">Cancelar</button><button type="submit" class="button-primary">Salvar paciente</button></div></form>
+      <form id="patient-form"><div class="form-grid"><div class="form-field"><label for="patient-name-input">Nome completo</label><input id="patient-name-input" name="name" maxlength="100" required placeholder="Ex.: Ana Silva"></div><div class="form-field"><label for="patient-email-input">E-mail</label><input id="patient-email-input" name="email" type="email" maxlength="254" required placeholder="ana@email.com"></div><div class="form-field"><label for="patient-goal-input">Objetivo principal</label><input id="patient-goal-input" name="goal" maxlength="160" placeholder="Ex.: reeducação alimentar"></div><div class="form-field"><label for="patient-birth-date-input">Data de nascimento</label><input id="patient-birth-date-input" name="birthDate" type="date" autocomplete="bday"></div><div class="form-field"><label for="patient-height-input">Altura (cm)</label><input id="patient-height-input" name="heightCm" type="number" min="80" max="250" step="0.1" inputmode="decimal" placeholder="Ex.: 165"></div><div class="form-field"><label for="patient-weight-input">Peso (kg)</label><input id="patient-weight-input" name="weightKg" type="number" min="20" max="400" step="0.1" inputmode="decimal" placeholder="Ex.: 68"></div><div class="form-field"><label for="patient-allergies-input">Alergias ou restrições alimentares</label><textarea id="patient-allergies-input" name="allergies" rows="3" maxlength="500" placeholder="Se não informado, deixe em branco"></textarea></div></div><p class="form-hint">Peça ao paciente que crie a conta com este mesmo e-mail para acessar o plano. Confirme alergias com o paciente.</p><div class="modal-actions"><button type="button" class="button-secondary" id="cancel-modal">Cancelar</button><button type="submit" class="button-primary">Salvar paciente</button></div></form>
     </div>
   </div>
   <div class="modal-backdrop" id="plan-modal" role="dialog" aria-modal="true" aria-labelledby="plan-modal-title">

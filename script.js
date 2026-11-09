@@ -50,6 +50,7 @@ const foodCatalog = [
 const sectionNames = {
   dashboard: "Visão geral",
   patients: "Pacientes",
+  anthropometry: "Antropometria",
   plans: "Planos alimentares",
   schedule: "Agenda",
   recipes: "Receitas",
@@ -141,6 +142,28 @@ function getStore() {
   if (!Array.isArray(data.foodLogs)) data.foodLogs = [];
   if (!Array.isArray(data.messages)) data.messages = [];
   if (!Array.isArray(data.customFoods)) data.customFoods = [];
+  let migratedMeasurements = false;
+  data.patients.forEach(patient => {
+    if (Array.isArray(patient.measurements)) return;
+    patient.measurements = [];
+    const heightCm = Number(patient.heightCm);
+    const weightKg = Number(patient.weightKg);
+    if (heightCm >= 80 && heightCm <= 250 && weightKg >= 20 && weightKg <= 400) {
+      patient.measurements.push({
+        id: `initial-${patient.id}`,
+        measuredAt: getLocalDateKey(new Date(patient.createdAt || Date.now())),
+        recordedAt: patient.createdAt || new Date().toISOString(),
+        heightCm,
+        weightKg,
+        waistCm: null,
+        hipCm: null,
+        armCm: null,
+        source: "Cadastro"
+      });
+    }
+    migratedMeasurements = true;
+  });
+  if (migratedMeasurements) saveStore(data);
   return data;
 }
 
@@ -195,14 +218,17 @@ function handleAuthState(account) {
         accountId: account.id,
         name: account.name,
         email: account.email,
+        birthDate: account.birthDate || null,
         goal: account.goal || "",
         allergies: account.allergies || "",
         heightCm: account.heightCm ?? null,
         weightKg: account.weightKg ?? null,
         status: "Novo paciente",
         last: "Ainda não consultou",
-        createdAt: account.createdAt || new Date().toISOString()
+        createdAt: account.createdAt || new Date().toISOString(),
+        measurements: []
       };
+      patient.measurements = getInitialAnthropometry(patient);
       data.patients.unshift(patient);
       saveStore(data);
     } else if (patient.accountId !== account.id) {
@@ -302,6 +328,7 @@ function renderAll() {
   document.getElementById("message-count").textContent =
     state.messages.filter(message => !message.readAt).length;
   renderPatients(document.getElementById("search-input").value);
+  renderAnthropometry();
   renderRecentPatients();
   renderPlans();
   renderReports();
@@ -316,6 +343,7 @@ function renderPatientPortal() {
   const plans = state.patientPlan?.plans || [];
   const profileGoal = document.getElementById("patient-profile-goal");
   const profileAllergies = document.getElementById("patient-profile-allergies");
+  document.getElementById("patient-profile-birth-date").value = patient?.birthDate || "";
   document.getElementById("patient-profile-height").value = patient?.heightCm ?? "";
   document.getElementById("patient-profile-weight").value = patient?.weightKg ?? "";
   profileGoal.value = patient?.goal || "";
@@ -337,16 +365,19 @@ function renderPatientPortal() {
 
 function renderPatients(search = "") {
   const term = search.trim().toLocaleLowerCase("pt-BR");
+  const ageGroup = document.getElementById("patient-age-filter").value;
   const filtered = state.patients.filter(patient =>
-    [patient.name, patient.goal, patient.allergies, patient.status, patient.email]
+    (!ageGroup || getPatientAgeGroup(patient.birthDate).id === ageGroup) &&
+    [patient.name, patient.goal, patient.allergies, patient.status, patient.email,
+      getPatientAgeLabel(patient.birthDate), getPatientAgeGroup(patient.birthDate).label]
       .some(value => String(value || "").toLocaleLowerCase("pt-BR").includes(term))
   );
   const tbody = document.getElementById("patients-table");
   const label = filtered.length === 1 ? "paciente cadastrado" : "pacientes cadastrados";
   document.getElementById("patient-list-count").textContent = `${filtered.length} ${label}`;
   if (!filtered.length) {
-    tbody.innerHTML = `<tr><td colspan="7" class="empty-state">${term
-      ? "Nenhum paciente encontrado. Tente outro nome ou objetivo."
+    tbody.innerHTML = `<tr><td colspan="8" class="empty-state">${term || ageGroup
+      ? "Nenhum paciente encontrado. Ajuste a busca ou a faixa etária."
       : "Ainda não há pacientes cadastrados. Use “Adicionar paciente” para começar."}</td></tr>`;
     return;
   }
@@ -359,8 +390,11 @@ function renderPatients(search = "") {
         : '<span class="status pending">Adicione e-mail</span>';
     const height = patient.heightCm ? `${formatNumber(patient.heightCm)} cm` : "Altura não informada";
     const weight = patient.weightKg ? `${formatNumber(patient.weightKg)} kg` : "Peso não informado";
+    const age = getPatientAgeLabel(patient.birthDate);
+    const ageGroupLabel = getPatientAgeGroup(patient.birthDate).label;
     return `<tr>
       <td><div class="table-person"><span class="avatar">${escapeHTML(getInitials(patient.name))}</span><span class="patient-details"><strong>${escapeHTML(patient.name)}</strong><small>${escapeHTML(height)} · ${escapeHTML(weight)}</small></span></div></td>
+      <td><span class="patient-age">${escapeHTML(age)}</span><small class="patient-age-group">${escapeHTML(ageGroupLabel)}</small></td>
       <td>${escapeHTML(patient.goal || "Não informado")}</td>
       <td>${escapeHTML(patient.allergies || "Nenhuma informada")}</td>
       <td>${escapeHTML(patient.last || "Ainda não consultou")}</td>
@@ -510,7 +544,7 @@ function renderRecentPatients() {
   container.innerHTML = state.patients.slice(0, 3).map(patient => `
     <div class="patient-row">
       <div class="avatar">${escapeHTML(getInitials(patient.name))}</div>
-      <div class="patient-name"><strong>${escapeHTML(patient.name)}</strong><span>${escapeHTML(patient.goal || "Objetivo não informado")}</span></div>
+      <div class="patient-name"><strong>${escapeHTML(patient.name)}</strong><span>${escapeHTML(getPatientAgeLabel(patient.birthDate))} · ${escapeHTML(patient.goal || "Objetivo não informado")}</span></div>
       <span class="status ${patient.status === "Plano ativo" ? "good" : "pending"}">${escapeHTML(patient.status || "Novo")}</span>
     </div>`).join("");
 }
@@ -522,17 +556,29 @@ function renderPlans() {
     container.innerHTML = '<p class="empty-state">Ainda não há planos alimentares. Crie um plano e associe a um paciente.</p>';
     return;
   }
-  container.innerHTML = state.plans.map(plan => `
+  container.innerHTML = state.plans.slice()
+    .sort((left, right) =>
+      String(left.patientName || "").localeCompare(String(right.patientName || ""), "pt-BR") ||
+      String(left.title || "").localeCompare(String(right.title || ""), "pt-BR")
+    )
+    .map(plan => `
     <article class="meal-plan-card">
+      <div class="plan-card-heading">
+        <div class="plan-title-group">
+          <span class="meal-tag">PLANO ALIMENTAR</span>
+          <h3>${escapeHTML(plan.title)}</h3>
+        </div>
+        <div class="plan-patient">
+          <span class="avatar">${escapeHTML(getInitials(plan.patientName || "Paciente"))}</span>
+          <span><small>PACIENTE</small><strong>${escapeHTML(plan.patientName || "Não informado")}</strong></span>
+        </div>
+      </div>
       <div class="plan-card-top">
-        <span class="meal-tag">PLANO ALIMENTAR</span>
         ${state.isAdmin ? `<div class="plan-actions">
           <button type="button" class="button-secondary" data-edit-plan="${escapeHTML(plan.id)}">Editar</button>
           <button type="button" class="button-secondary plan-delete" data-delete-plan="${escapeHTML(plan.id)}">Excluir</button>
         </div>` : ""}
       </div>
-      <h3>${escapeHTML(plan.title)}</h3>
-      <p class="plan-patient">Paciente: ${escapeHTML(plan.patientName)}</p>
       ${renderPlanMeals(plan)}
       <div class="meal-plan-meta"><span>${escapeHTML(formatDate(plan.updatedAt))}</span><span>Demonstração local</span></div>
     </article>`).join("");
@@ -580,9 +626,131 @@ function roleName(role) {
 
 function formatDate(value) {
   if (!value) return "Não informado";
-  const date = new Date(value);
+  const date = /^\d{4}-\d{2}-\d{2}$/.test(String(value))
+    ? new Date(Number(value.slice(0, 4)), Number(value.slice(5, 7)) - 1, Number(value.slice(8, 10)))
+    : new Date(value);
   if (Number.isNaN(date.getTime())) return "Não informado";
   return new Intl.DateTimeFormat("pt-BR", { day: "numeric", month: "short", year: "numeric" }).format(date);
+}
+
+function getPatientAge(birthDate) {
+  if (!birthDate) return null;
+  const [year, month, day] = String(birthDate).split("-").map(Number);
+  const date = new Date(year, month - 1, day);
+  if (!year || date.getFullYear() !== year || date.getMonth() !== month - 1 ||
+      date.getDate() !== day || date > new Date()) return null;
+  const today = new Date();
+  let age = today.getFullYear() - year;
+  if (today.getMonth() < month - 1 ||
+      (today.getMonth() === month - 1 && today.getDate() < day)) age -= 1;
+  return age <= 120 ? age : null;
+}
+
+function getPatientAgeGroup(birthDate) {
+  const age = getPatientAge(birthDate);
+  if (age === null) return { id: "unknown", label: "Sem data de nascimento" };
+  if (age < 12) return { id: "children", label: "Criança" };
+  if (age < 18) return { id: "adolescents", label: "Adolescente" };
+  if (age < 60) return { id: "adults", label: "Adulto" };
+  return { id: "older-adults", label: "60 anos ou mais" };
+}
+
+function getPatientAgeLabel(birthDate) {
+  const age = getPatientAge(birthDate);
+  return age === null ? "Idade não informada" : `${age} ${age === 1 ? "ano" : "anos"}`;
+}
+
+function getLocalDateKey(date = new Date()) {
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
+}
+
+function sortAnthropometry(measurements) {
+  return measurements.slice().sort((left, right) =>
+    String(right.measuredAt).localeCompare(String(left.measuredAt)) ||
+    String(right.recordedAt || right.measuredAt).localeCompare(String(left.recordedAt || left.measuredAt))
+  );
+}
+
+function readBirthDate(formData, required = false) {
+  const birthDate = String(formData.get("birthDate") || "").trim();
+  if (!birthDate) {
+    if (required) throw new Error("Informe sua data de nascimento.");
+    return null;
+  }
+  const age = getPatientAge(birthDate);
+  if (age === null) throw new Error("Informe uma data de nascimento válida, com até 120 anos.");
+  return birthDate;
+}
+
+function getInitialAnthropometry(patient) {
+  if (!patient.heightCm || !patient.weightKg) return [];
+  const createdAt = new Date(patient.createdAt || Date.now());
+  return [{
+    id: createId(),
+    measuredAt: getLocalDateKey(createdAt),
+    recordedAt: createdAt.toISOString(),
+    heightCm: Number(patient.heightCm),
+    weightKg: Number(patient.weightKg),
+    waistCm: null,
+    hipCm: null,
+    armCm: null,
+    source: "Cadastro"
+  }];
+}
+
+function renderAnthropometry() {
+  const patientSelect = document.getElementById("anthro-patient");
+  if (!patientSelect) return;
+  const selectedPatientId = patientSelect.value;
+  const patients = state.patients.slice().sort((left, right) =>
+    left.name.localeCompare(right.name, "pt-BR")
+  );
+  patientSelect.innerHTML = '<option value="">Selecione um paciente</option>' +
+    patients.map(patient =>
+      `<option value="${escapeHTML(patient.id)}">${escapeHTML(patient.name)}</option>`
+    ).join("");
+  patientSelect.value = patients.some(patient => patient.id === selectedPatientId)
+    ? selectedPatientId
+    : "";
+  const selectedPatient = patients.find(patient => patient.id === patientSelect.value);
+  const summary = document.getElementById("anthro-patient-summary");
+  const history = document.getElementById("anthro-history-table");
+  const form = document.getElementById("anthro-form");
+  const today = new Date();
+  const dateInput = document.getElementById("anthro-date");
+  dateInput.max = getLocalDateKey(today);
+  if (!selectedPatient) {
+    summary.innerHTML = patients.length
+      ? '<p class="empty-state">Selecione um paciente para consultar o acompanhamento.</p>'
+      : '<p class="empty-state">Cadastre um paciente para iniciar o acompanhamento antropométrico.</p>';
+    history.innerHTML = '<tr><td colspan="8" class="empty-state">Selecione um paciente para ver o histórico.</td></tr>';
+    form.querySelectorAll("input, button").forEach(field => { field.disabled = true; });
+    patientSelect.disabled = patients.length === 0;
+    return;
+  }
+  form.querySelectorAll("input, button").forEach(field => { field.disabled = false; });
+  patientSelect.disabled = false;
+  if (!dateInput.value) dateInput.value = dateInput.max;
+  const measurements = sortAnthropometry(selectedPatient.measurements || []);
+  const latest = measurements[0];
+  const age = getPatientAge(selectedPatient.birthDate);
+  summary.innerHTML = `<div><strong>${escapeHTML(selectedPatient.name)}</strong><span>${escapeHTML(getPatientAgeLabel(selectedPatient.birthDate))} · ${escapeHTML(getPatientAgeGroup(selectedPatient.birthDate).label)}</span></div>${latest
+    ? `<div class="anthro-latest"><span>Último peso <strong>${formatNumber(latest.weightKg)} kg</strong></span><span>Altura <strong>${formatNumber(latest.heightCm)} cm</strong></span><span>IMC descritivo <strong>${formatNumber(latest.weightKg / (latest.heightCm / 100) ** 2, 1)}</strong></span></div>`
+    : '<p class="form-hint">Ainda não há avaliações registradas para este paciente.</p>'}${age !== null && age < 18
+      ? '<p class="form-hint">Paciente menor de 18 anos: o IMC exige interpretação por idade e sexo e não deve ser avaliado pelos pontos de corte de adultos.</p>'
+      : ""}`;
+  history.innerHTML = measurements.length ? measurements.map(measurement => `
+    <tr>
+      <td>${escapeHTML(formatDate(measurement.measuredAt))}</td>
+      <td>${formatNumber(measurement.weightKg)} kg</td>
+      <td>${formatNumber(measurement.heightCm)} cm</td>
+      <td>${formatNumber(measurement.weightKg / (measurement.heightCm / 100) ** 2, 1)}</td>
+      <td>${measurement.waistCm ? `${formatNumber(measurement.waistCm)} cm` : "—"}</td>
+      <td>${measurement.hipCm ? `${formatNumber(measurement.hipCm)} cm` : "—"}</td>
+      <td>${measurement.armCm ? `${formatNumber(measurement.armCm)} cm` : "—"}</td>
+      <td><button type="button" class="button-secondary patient-delete" data-delete-measurement="${escapeHTML(measurement.id)}">Excluir</button></td>
+    </tr>`).join("")
+    : '<tr><td colspan="8" class="empty-state">Nenhuma medida registrada. Preencha a avaliação acima para começar o histórico.</td></tr>';
 }
 
 function getInitials(name) {
@@ -655,17 +823,32 @@ function renderFoodNutrition(items) {
     const food = getPlanFood(item);
     if (!food) return "";
     const nutrients = calculateFoodNutrients([item]);
-    return `<p><strong>${escapeHTML(food.name)}</strong> (${escapeHTML(food.source)}) — ${formatNumber(item.grams)} g (${formatNumber(nutrients.kcal)} kcal; C ${formatNumber(nutrients.carbs)} g; P ${formatNumber(nutrients.protein)} g; G ${formatNumber(nutrients.fat)} g)</p>`;
+    return `<tr>
+      <td><strong>${escapeHTML(food.name)}</strong><small>${escapeHTML(food.source)}</small></td>
+      <td>${formatNumber(item.grams)} g</td>
+      <td>${formatNumber(nutrients.protein)} g</td>
+      <td>${formatNumber(nutrients.carbs)} g</td>
+      <td>${formatNumber(nutrients.fat)} g</td>
+      <td>${formatNumber(nutrients.kcal)}</td>
+    </tr>`;
   }).join("");
   const total = calculateFoodNutrients(items);
-  return `<div class="plan-food-nutrition">${rows}<p class="plan-food-summary">Total estimado desta refeição: ${formatNumber(total.kcal)} kcal · carboidratos ${formatNumber(total.carbs)} g · proteínas ${formatNumber(total.protein)} g · gorduras ${formatNumber(total.fat)} g</p></div>`;
+  return `<div class="plan-food-nutrition"><div class="table-wrap nutrition-table-wrap"><table class="nutrition-table"><caption class="sr-only">Alimentos e nutrientes estimados desta refeição</caption><thead><tr><th>ALIMENTO</th><th>QUANTIDADE</th><th>PROTEÍNAS</th><th>CARBOIDRATOS</th><th>LIPÍDIOS</th><th>CALORIAS</th></tr></thead><tbody>${rows}<tr class="nutrition-total-row"><th scope="row">Total estimado</th><td>—</td><td>${formatNumber(total.protein)} g</td><td>${formatNumber(total.carbs)} g</td><td>${formatNumber(total.fat)} g</td><td>${formatNumber(total.kcal)} kcal</td></tr></tbody></table></div><p class="nutrition-disclaimer">Estimativa calculada com os alimentos e porções cadastrados.</p></div>`;
 }
 
 function renderPlanNutritionSummary(schedule) {
   const foodItems = schedule.flatMap(meal => meal.foods || []);
   if (!foodItems.length) return "";
   const total = calculateFoodNutrients(foodItems);
-  return `<div class="plan-nutrition-overview"><strong>Total estimado dos alimentos cadastrados: ${formatNumber(total.kcal)} kcal</strong><span>Carboidratos ${formatNumber(total.carbs)} g · proteínas ${formatNumber(total.protein)} g · gorduras ${formatNumber(total.fat)} g</span><small>O cálculo considera os alimentos e porções informados; orientações em texto livre não entram no total.</small></div>`;
+  const macroEnergy = total.carbs * 4 + total.protein * 4 + total.fat * 9;
+  const proteinPercent = macroEnergy ? total.protein * 4 / macroEnergy * 100 : 0;
+  const carbsPercent = macroEnergy ? total.carbs * 4 / macroEnergy * 100 : 0;
+  const fatPercent = macroEnergy ? total.fat * 9 / macroEnergy * 100 : 0;
+  const chartLabel = `Distribuição estimada de energia dos macronutrientes: proteínas ${proteinPercent.toFixed(0)}%, carboidratos ${carbsPercent.toFixed(0)}%, lipídios ${fatPercent.toFixed(0)}%.`;
+  const chartStyle = macroEnergy
+    ? `background:conic-gradient(#e3a34c 0% ${proteinPercent}%,#4a9367 ${proteinPercent}% ${proteinPercent + carbsPercent}%,#7d8fc0 ${proteinPercent + carbsPercent}% 100%)`
+    : "background:#dce4dc";
+  return `<div class="plan-nutrition-overview"><div class="nutrition-summary-heading"><strong>Resumo nutricional estimado</strong><span>Total do plano</span></div><div class="nutrition-summary-content"><div class="nutrition-donut" role="img" aria-label="${chartLabel}" style="${chartStyle}"><span><strong>${formatNumber(total.kcal)}</strong><small>kcal</small></span></div><div class="nutrition-macro-list"><div><i class="macro-protein"></i><span>Proteínas</span><strong>${formatNumber(total.protein)} g</strong><small>${formatNumber(proteinPercent, 0)}%</small></div><div><i class="macro-carb"></i><span>Carboidratos</span><strong>${formatNumber(total.carbs)} g</strong><small>${formatNumber(carbsPercent, 0)}%</small></div><div><i class="macro-fat"></i><span>Lipídios</span><strong>${formatNumber(total.fat)} g</strong><small>${formatNumber(fatPercent, 0)}%</small></div></div></div><small>Estimativa baseada nos alimentos cadastrados; orientações em texto livre não entram no cálculo. Percentuais calculados por energia (4 kcal/g para proteínas e carboidratos; 9 kcal/g para lipídios) e não representam uma meta.</small></div>`;
 }
 
 function renderPlanFoodEditor() {
@@ -709,6 +892,117 @@ function readPatientMeasurements(formData, required = false) {
   }, {});
 }
 
+function readOptionalAnthropometry(formData, name, label, min, max) {
+  const rawValue = String(formData.get(name) || "").trim();
+  if (!rawValue) return null;
+  const value = Number(rawValue);
+  if (!Number.isFinite(value) || value < min || value > max) {
+    throw new Error(`Informe ${label} entre ${min} e ${max} cm.`);
+  }
+  return value;
+}
+
+function saveAnthropometry(event) {
+  event.preventDefault();
+  const patientId = document.getElementById("anthro-patient").value;
+  const patient = state.patients.find(item => item.id === patientId);
+  if (!patient) {
+    showToast("Selecione um paciente antes de salvar a avaliação.");
+    return;
+  }
+  const formData = new FormData(event.currentTarget);
+  const measuredAt = String(formData.get("measuredAt") || "");
+  const today = new Date();
+  const todayKey = getLocalDateKey(today);
+  const [year, month, day] = measuredAt.split("-").map(Number);
+  const date = new Date(year, month - 1, day);
+  if (!measuredAt || date.getFullYear() !== year || date.getMonth() !== month - 1 ||
+      date.getDate() !== day || measuredAt > todayKey) {
+    showToast("Informe uma data válida, que não seja futura.");
+    return;
+  }
+  const weightKg = Number(formData.get("weightKg"));
+  const heightCm = Number(formData.get("heightCm"));
+  if (!Number.isFinite(weightKg) || weightKg < 20 || weightKg > 400 ||
+      !Number.isFinite(heightCm) || heightCm < 80 || heightCm > 250) {
+    showToast("Informe peso entre 20 e 400 kg e altura entre 80 e 250 cm.");
+    return;
+  }
+  try {
+    const entry = {
+      id: createId(),
+      measuredAt,
+      recordedAt: new Date().toISOString(),
+      weightKg,
+      heightCm,
+      waistCm: readOptionalAnthropometry(formData, "waistCm", "circunferência da cintura", 30, 250),
+      hipCm: readOptionalAnthropometry(formData, "hipCm", "circunferência do quadril", 30, 250),
+      armCm: readOptionalAnthropometry(formData, "armCm", "circunferência do braço", 10, 100),
+      source: "Nutricionista"
+    };
+    const data = getStore();
+    const storedPatient = data.patients.find(item =>
+      item.id === patient.id && item.ownerId === state.user.id
+    );
+    if (!storedPatient) throw new Error("Não foi possível localizar este paciente.");
+    storedPatient.measurements = storedPatient.measurements || [];
+    storedPatient.measurements.push(entry);
+    const latest = sortAnthropometry(storedPatient.measurements)[0];
+    storedPatient.heightCm = latest.heightCm;
+    storedPatient.weightKg = latest.weightKg;
+    const account = data.accounts.find(item => item.id === storedPatient.accountId);
+    if (account) {
+      account.heightCm = storedPatient.heightCm;
+      account.weightKg = storedPatient.weightKg;
+    }
+    saveStore(data);
+    Object.assign(patient, {
+      heightCm: storedPatient.heightCm,
+      weightKg: storedPatient.weightKg,
+      measurements: storedPatient.measurements
+    });
+    event.currentTarget.reset();
+    renderAll();
+    showToast("Avaliação antropométrica salva no histórico.");
+  } catch (error) {
+    console.error("Erro ao salvar avaliação antropométrica:", error);
+    showToast(`Não foi possível salvar a avaliação: ${error.message}`);
+  }
+}
+
+function deleteAnthropometryMeasurement(measurementId) {
+  const patientId = document.getElementById("anthro-patient").value;
+  const patient = state.patients.find(item => item.id === patientId);
+  if (!patient || !window.confirm("Excluir esta avaliação antropométrica? Esta ação não pode ser desfeita.")) return;
+  try {
+    const data = getStore();
+    const storedPatient = data.patients.find(item =>
+      item.id === patient.id && item.ownerId === state.user.id
+    );
+    if (!storedPatient) throw new Error("Não foi possível localizar este paciente.");
+    storedPatient.measurements = (storedPatient.measurements || []).filter(item => item.id !== measurementId);
+    const latest = sortAnthropometry(storedPatient.measurements)[0];
+    storedPatient.heightCm = latest?.heightCm ?? null;
+    storedPatient.weightKg = latest?.weightKg ?? null;
+    const account = data.accounts.find(item => item.id === storedPatient.accountId);
+    if (account) {
+      account.heightCm = storedPatient.heightCm;
+      account.weightKg = storedPatient.weightKg;
+    }
+    saveStore(data);
+    Object.assign(patient, {
+      heightCm: storedPatient.heightCm,
+      weightKg: storedPatient.weightKg,
+      measurements: storedPatient.measurements
+    });
+    renderAll();
+    showToast("Avaliação removida do histórico.");
+  } catch (error) {
+    console.error("Erro ao excluir avaliação antropométrica:", error);
+    showToast(`Não foi possível excluir a avaliação: ${error.message}`);
+  }
+}
+
 function openPatientModal() {
   state.lastFocusedElement = document.activeElement;
   modal.classList.add("open");
@@ -747,7 +1041,9 @@ function openPlanModal() {
     return;
   }
   const selector = document.getElementById("plan-patient");
-  selector.innerHTML = state.patients.map(patient =>
+  selector.innerHTML = state.patients.slice()
+    .sort((left, right) => left.name.localeCompare(right.name, "pt-BR"))
+    .map(patient =>
     `<option value="${escapeHTML(patient.id)}">${escapeHTML(patient.name)}</option>`
   ).join("");
   populateFoodComposer();
@@ -782,7 +1078,9 @@ function editPlan(planId) {
     return;
   }
   const selector = document.getElementById("plan-patient");
-  selector.innerHTML = state.patients.map(patient =>
+  selector.innerHTML = state.patients.slice()
+    .sort((left, right) => left.name.localeCompare(right.name, "pt-BR"))
+    .map(patient =>
     `<option value="${escapeHTML(patient.id)}">${escapeHTML(patient.name)}</option>`
   ).join("");
   selector.value = plan.patientId;
@@ -895,6 +1193,7 @@ function savePatient(event) {
   };
   if (!patientData.name) return;
   try {
+    patientData.birthDate = readBirthDate(formData);
     Object.assign(patientData, readPatientMeasurements(formData));
     const data = getStore();
     if (data.patients.some(patient =>
@@ -908,6 +1207,7 @@ function savePatient(event) {
     if (account) {
       patientData.heightCm = patientData.heightCm ?? account.heightCm ?? null;
       patientData.weightKg = patientData.weightKg ?? account.weightKg ?? null;
+      patientData.birthDate = patientData.birthDate || account.birthDate || null;
     }
     const patient = {
       id: createId(),
@@ -919,9 +1219,11 @@ function savePatient(event) {
       createdAt: new Date().toISOString(),
       hasAccount: Boolean(account)
     };
+    patient.measurements = getInitialAnthropometry(patient);
     if (account) {
       account.goal = patientData.goal;
       account.allergies = patientData.allergies;
+      account.birthDate = patientData.birthDate;
       if (patientData.heightCm !== null) account.heightCm = patientData.heightCm;
       if (patientData.weightKg !== null) account.weightKg = patientData.weightKg;
     }
@@ -948,6 +1250,7 @@ function savePatientProfile(event) {
   const goal = String(formData.get("goal") || "").trim();
   const allergies = String(formData.get("allergies") || "").trim();
   try {
+    const birthDate = readBirthDate(formData);
     const measurements = readPatientMeasurements(formData);
     const data = getStore();
     const patient = data.patients.find(item =>
@@ -956,12 +1259,31 @@ function savePatientProfile(event) {
     if (!patient) throw new Error("Não foi possível localizar seu cadastro.");
     patient.goal = goal;
     patient.allergies = allergies;
+    patient.birthDate = birthDate;
+    const latestMeasurement = sortAnthropometry(patient.measurements || [])[0];
+    if (measurements.heightCm !== null && measurements.weightKg !== null &&
+        (!latestMeasurement || latestMeasurement.heightCm !== measurements.heightCm ||
+          latestMeasurement.weightKg !== measurements.weightKg)) {
+      patient.measurements = patient.measurements || [];
+      patient.measurements.push({
+        id: createId(),
+        measuredAt: getLocalDateKey(),
+        recordedAt: new Date().toISOString(),
+        heightCm: measurements.heightCm,
+        weightKg: measurements.weightKg,
+        waistCm: null,
+        hipCm: null,
+        armCm: null,
+        source: "Portal do paciente"
+      });
+    }
     patient.heightCm = measurements.heightCm;
     patient.weightKg = measurements.weightKg;
     const account = data.accounts.find(item => item.id === state.user.id);
     if (account) {
       account.goal = goal;
       account.allergies = allergies;
+      account.birthDate = birthDate;
       account.heightCm = measurements.heightCm;
       account.weightKg = measurements.weightKg;
     }
@@ -969,6 +1291,7 @@ function savePatientProfile(event) {
     state.patientPlan.patient = patient;
     state.user.heightCm = measurements.heightCm;
     state.user.weightKg = measurements.weightKg;
+    state.user.birthDate = birthDate;
     showToast("Perfil atualizado para o nutricionista.");
   } catch (error) {
     console.error("Erro ao atualizar informações do paciente:", error);
@@ -1319,8 +1642,10 @@ function updateAuthMode() {
   authNameField.hidden = !signup;
   document.querySelectorAll(".signup-patient-field").forEach(field => { field.hidden = !signup; });
   document.getElementById("auth-name").required = signup;
+  document.getElementById("auth-birth-date").required = signup;
   document.getElementById("auth-height").required = signup;
   document.getElementById("auth-weight").required = signup;
+  setDateInputMaximums();
   authPassword.autocomplete = signup ? "new-password" : "current-password";
   authSubmit.textContent = patientSignup ? "Criar conta de paciente" : "Entrar";
   document.getElementById("auth-title").textContent = patientSignup
@@ -1328,15 +1653,18 @@ function updateAuthMode() {
     : "Bem-vindo(a) ao NutriFlow";
   document.getElementById("auth-toggle-text").textContent = patientSignup
     ? "Já tem uma conta?" : "É paciente e ainda não tem conta?";
-  document.getElementById("auth-guidance").textContent = patientSignup
-    ? "Informe sua altura e seu peso para completar o cadastro. Esses dados poderão ser atualizados no seu perfil."
-    : "Entre com seus dados cadastrados. Pacientes podem criar uma conta para acessar seus planos.";
   document.getElementById("auth-toggle").textContent = patientSignup ? "Entrar" : "Criar conta de paciente";
   document.getElementById("auth-guidance").textContent = patientSignup
-    ? "Informe seu objetivo e alergias para o nutricionista. Use o mesmo e-mail do cadastro do consultório."
+    ? "Informe sua data de nascimento, objetivo e alergias para o nutricionista. Use o mesmo e-mail do cadastro do consultório."
     : "Entre com seus dados cadastrados. Pacientes podem criar uma conta para acessar seus planos.";
   document.getElementById("auth-guidance").hidden = false;
   setAuthError("");
+}
+
+function setDateInputMaximums() {
+  const today = new Date();
+  const todayKey = getLocalDateKey(today);
+  document.querySelectorAll('input[type="date"]').forEach(input => { input.max = todayKey; });
 }
 
 function updateGreeting() {
@@ -1382,7 +1710,8 @@ authForm.addEventListener("submit", async event => {
     password: String(formData.get("password") || ""),
     name: String(formData.get("name") || "").trim(),
     goal: String(formData.get("goal") || "").trim(),
-    allergies: String(formData.get("allergies") || "").trim()
+    allergies: String(formData.get("allergies") || "").trim(),
+    birthDate: ""
   };
   try {
     const data = getStore();
@@ -1391,6 +1720,7 @@ authForm.addEventListener("submit", async event => {
       if (!payload.name || payload.name.length > 80) throw new Error("Informe seu nome (até 80 caracteres).");
       if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(payload.email)) throw new Error("Informe um e-mail válido.");
       if (payload.password.length < 8) throw new Error("Use uma senha com pelo menos 8 caracteres.");
+      payload.birthDate = readBirthDate(formData, true);
       const measurements = readPatientMeasurements(formData, true);
       if (data.accounts.some(user => user.email.toLowerCase() === payload.email)) {
         throw new Error("Este e-mail já possui uma conta. Tente entrar.");
@@ -1403,6 +1733,7 @@ authForm.addEventListener("submit", async event => {
         role: "patient",
         goal: payload.goal,
         allergies: payload.allergies,
+        birthDate: payload.birthDate,
         ...measurements,
         createdAt: new Date().toISOString()
       };
@@ -1415,8 +1746,25 @@ authForm.addEventListener("submit", async event => {
         patient.name = payload.name;
         if (payload.goal) patient.goal = payload.goal;
         if (payload.allergies) patient.allergies = payload.allergies;
+        patient.birthDate = payload.birthDate;
         patient.heightCm = measurements.heightCm;
         patient.weightKg = measurements.weightKg;
+        patient.measurements = patient.measurements || [];
+        const latestMeasurement = sortAnthropometry(patient.measurements)[0];
+        if (!latestMeasurement || latestMeasurement.heightCm !== measurements.heightCm ||
+            latestMeasurement.weightKg !== measurements.weightKg) {
+          patient.measurements.push({
+            id: createId(),
+            measuredAt: getLocalDateKey(),
+            recordedAt: new Date().toISOString(),
+            heightCm: measurements.heightCm,
+            weightKg: measurements.weightKg,
+            waistCm: null,
+            hipCm: null,
+            armCm: null,
+            source: "Cadastro do paciente"
+          });
+        }
       } else {
         patient = {
           id: createId(),
@@ -1426,11 +1774,14 @@ authForm.addEventListener("submit", async event => {
           email: account.email,
           goal: payload.goal,
           allergies: payload.allergies,
+          birthDate: payload.birthDate,
           ...measurements,
           status: "Novo paciente",
           last: "Ainda não consultou",
-          createdAt: new Date().toISOString()
+          createdAt: new Date().toISOString(),
+          measurements: []
         };
+        patient.measurements = getInitialAnthropometry(patient);
         data.patients.unshift(patient);
       }
       saveStore(data);
@@ -1471,6 +1822,7 @@ document.getElementById("close-plan-modal").addEventListener("click", closePlanM
 document.getElementById("cancel-plan-modal").addEventListener("click", closePlanModal);
 planModal.addEventListener("click", event => { if (event.target === planModal) closePlanModal(); });
 document.getElementById("patient-form").addEventListener("submit", savePatient);
+document.getElementById("anthro-form").addEventListener("submit", saveAnthropometry);
 document.getElementById("patient-profile-form").addEventListener("submit", savePatientProfile);
 document.getElementById("food-log-form").addEventListener("submit", saveFoodLog);
 document.getElementById("patient-message-form").addEventListener("submit", sendPatientMessage);
@@ -1498,6 +1850,11 @@ document.getElementById("patients-table").addEventListener("click", event => {
   const deleteButton = event.target.closest("[data-delete-patient]");
   if (deleteButton) deletePatient(deleteButton.dataset.deletePatient);
 });
+document.getElementById("anthro-patient").addEventListener("change", renderAnthropometry);
+document.getElementById("anthro-history-table").addEventListener("click", event => {
+  const button = event.target.closest("[data-delete-measurement]");
+  if (button) deleteAnthropometryMeasurement(button.dataset.deleteMeasurement);
+});
 document.getElementById("patient-messages").addEventListener("click", event => {
   const button = event.target.closest("[data-read-message]");
   if (button) markMessageRead(button.dataset.readMessage);
@@ -1523,6 +1880,9 @@ document.getElementById("search-input").addEventListener("input", event => {
 document.getElementById("clear-search").addEventListener("click", () => {
   document.getElementById("search-input").value = "";
   renderPatients();
+});
+document.getElementById("patient-age-filter").addEventListener("change", () => {
+  renderPatients(document.getElementById("search-input").value);
 });
 document.getElementById("macro-patient-filter").addEventListener("change", renderReports);
 document.getElementById("menu-toggle").addEventListener("click", () => {
