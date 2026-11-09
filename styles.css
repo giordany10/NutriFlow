@@ -354,6 +354,17 @@ button.is-loading::after {
   margin-top: 16px;
 }
 
+.patient-details {
+  display: grid;
+  gap: 3px;
+}
+
+.patient-details small {
+  color: var(--muted);
+  font-size: 9px;
+  font-weight: 450;
+}
+
 .food-nutrients {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -582,6 +593,133 @@ button.is-loading::after {
   resize: vertical;
 }
 
+.food-composer {
+  display: grid;
+  gap: 10px;
+  margin-top: 14px;
+  padding: 13px;
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  background: #fbfcfa;
+}
+
+.food-composer h3 {
+  margin: 0;
+  font-size: 12px;
+}
+
+.food-composer .form-hint {
+  margin: 0;
+}
+
+.food-composer-fields {
+  display: grid;
+  grid-template-columns: minmax(120px, 1fr) minmax(150px, 1.2fr) minmax(150px, 1.3fr) 100px auto;
+  align-items: end;
+  gap: 9px;
+}
+
+.food-composer-fields .form-field label {
+  font-size: 9px;
+}
+
+.food-composer-fields .button-secondary {
+  min-height: 39px;
+}
+
+.custom-food-toggle {
+  justify-self: start;
+  padding-left: 0;
+}
+
+.custom-food-form {
+  display: grid;
+  gap: 10px;
+  padding: 12px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #fff;
+}
+
+.custom-food-form h4 {
+  margin: 0;
+  font-size: 11px;
+}
+
+.custom-food-fields {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  align-items: end;
+  gap: 9px;
+}
+
+.custom-food-fields .button-primary {
+  min-height: 39px;
+}
+
+.plan-food-items {
+  display: grid;
+  gap: 7px;
+}
+
+.plan-food-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 10px;
+  border-radius: 7px;
+  background: #fff;
+  color: #536057;
+  font-size: 10px;
+}
+
+.plan-food-row strong {
+  color: var(--ink);
+}
+
+.plan-food-row button {
+  padding: 4px 7px;
+}
+
+.plan-food-summary {
+  color: var(--green-dark);
+  font-size: 10px;
+  font-weight: 650;
+}
+
+.plan-nutrition-overview {
+  display: grid;
+  gap: 5px;
+  margin-bottom: 12px;
+  padding: 12px;
+  border: 1px solid #dceadd;
+  border-radius: 9px;
+  background: #f3f8f3;
+  color: var(--green-dark);
+  font-size: 11px;
+}
+
+.plan-nutrition-overview strong {
+  font-size: 12px;
+}
+
+.plan-nutrition-overview small {
+  color: #64746a;
+  font-size: 9px;
+  line-height: 1.5;
+}
+
+.plan-water-goal {
+  margin-top: 12px;
+  padding: 11px;
+  border-radius: 8px;
+  background: var(--green-soft);
+  color: var(--green-dark);
+  font-size: 11px;
+  font-weight: 650;
+}
+
 .plan-meal-list {
   display: grid;
   gap: 8px;
@@ -623,6 +761,19 @@ button.is-loading::after {
   line-height: 1.55;
   white-space: pre-wrap;
   overflow-wrap: anywhere;
+}
+
+.plan-food-nutrition {
+  margin-top: 8px;
+}
+
+.plan-food-nutrition p {
+  margin: 4px 0 0;
+  font-size: 10px;
+}
+
+.plan-food-nutrition .plan-food-summary {
+  margin-top: 8px;
 }
 
 .plan-general-notes {
@@ -823,6 +974,114 @@ button,
   animation: modal-enter .2s ease-out;
 }
 
+#plan-modal .modal {
+  display: flex;
+  flex-direction: column;
+  width: min(100%, 980px);
+  height: min(92vh, 960px);
+  max-height: min(92vh, 960px);
+  overflow: hidden;
+  padding: clamp(20px, 3vw, 30px);
+}
+
+#plan-modal .modal-heading {
+  flex: 0 0 auto;
+  padding: 2px 0 14px;
+  margin: 0 0 20px;
+  background: #fff;
+  border-bottom: 1px solid var(--line);
+}
+
+#plan-form {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  min-height: 0;
+}
+
+#plan-form > .form-grid {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  gap: 18px;
+}
+
+#plan-modal .modal-actions {
+  flex: 0 0 auto;
+  padding: 14px 0 2px;
+  margin-top: 20px;
+  background: #fff;
+  border-top: 1px solid var(--line);
+}
+
+.meal-schedule-fieldset {
+  padding: 20px;
+}
+
+.meal-schedule-editor {
+  gap: 14px;
+}
+
+.plan-meal-item {
+  gap: 10px;
+  padding: 13px;
+}
+
+.plan-meal-item textarea {
+  min-height: 72px;
+}
+
+.food-composer {
+  gap: 14px;
+  padding: 18px;
+}
+
+.food-composer-fields {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 13px;
+}
+
+.food-composer-fields .form-field label {
+  font-size: 10px;
+}
+
+.food-composer-fields .button-secondary {
+  justify-self: start;
+  min-width: 150px;
+  padding: 0 15px;
+}
+
+.custom-food-form {
+  gap: 14px;
+  padding: 16px;
+}
+
+.custom-food-fields {
+  gap: 12px;
+}
+
+.plan-food-items {
+  gap: 9px;
+}
+
+.plan-food-row {
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 8px 14px;
+  padding: 12px 14px;
+  line-height: 1.5;
+}
+
+.plan-food-row > span:first-child {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.plan-food-row > span:nth-child(2) {
+  color: #748078;
+  font-size: 9px;
+}
+
 .toast {
   max-width: min(390px, calc(100vw - 32px));
   line-height: 1.5;
@@ -946,6 +1205,52 @@ button,
     max-height: 92dvh;
     padding: 18px;
     border-radius: 14px 14px 10px 10px;
+  }
+
+  .food-composer-fields {
+    grid-template-columns: 1fr;
+  }
+
+  .custom-food-fields {
+    grid-template-columns: 1fr;
+  }
+
+  #plan-modal .modal {
+    height: calc(100dvh - 20px);
+    max-height: calc(100dvh - 20px);
+    padding: 18px 14px;
+  }
+
+  .meal-schedule-fieldset {
+    padding: 14px 10px;
+  }
+
+  .food-composer {
+    padding: 14px 11px;
+  }
+
+  .food-composer-fields .button-secondary {
+    width: 100%;
+  }
+
+  .plan-food-row {
+    grid-template-columns: minmax(0, 1fr) auto;
+    padding: 10px;
+  }
+
+  .plan-food-row > span:nth-child(2) {
+    grid-column: 1;
+  }
+
+  .plan-food-row > button {
+    grid-column: 2;
+    grid-row: 1 / span 2;
+  }
+}
+
+@media (min-width: 621px) and (max-width: 900px) {
+  .custom-food-fields {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
 

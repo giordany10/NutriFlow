@@ -39,6 +39,14 @@ const mealDefinitions = [
   { id: "dinner", name: "Jantar" },
   { id: "supper", name: "Ceia" }
 ];
+const foodCatalog = [
+  { id: "rice-cooked", name: "Arroz tipo 1 cozido", category: "Cereais e derivados", source: "TACO (amostra)", kcal: 128, carbs: 28.1, protein: 2.5, fat: 0.2 },
+  { id: "beans-cooked", name: "Feijão carioca cozido", category: "Leguminosas", source: "TACO (amostra)", kcal: 76, carbs: 13.6, protein: 4.8, fat: 0.5 },
+  { id: "chicken-grilled", name: "Peito de frango grelhado", category: "Carnes e ovos", source: "TACO (amostra)", kcal: 159, carbs: 0, protein: 32, fat: 2.5 },
+  { id: "banana-prata", name: "Banana prata", category: "Frutas", source: "TACO (amostra)", kcal: 98, carbs: 26, protein: 1.3, fat: 0.1 },
+  { id: "egg-boiled", name: "Ovo cozido", category: "Carnes e ovos", source: "TACO (amostra)", kcal: 146, carbs: 0.6, protein: 13.3, fat: 9.5 },
+  { id: "sweet-potato-cooked", name: "Batata-doce cozida", category: "Raízes e tubérculos", source: "TACO (amostra)", kcal: 77, carbs: 18.4, protein: 0.6, fat: 0.1 }
+];
 const sectionNames = {
   dashboard: "Visão geral",
   patients: "Pacientes",
@@ -61,6 +69,7 @@ const state = {
   patientPlan: null,
   signupMode: "login",
   editingPlanId: null,
+  planFoodItems: [],
   toastTimer: null
 };
 
@@ -113,7 +122,8 @@ function createDemoData() {
       updatedAt: "2026-01-01T12:00:00.000Z"
     }],
     foodLogs: [],
-    messages: []
+    messages: [],
+    customFoods: []
   };
 }
 
@@ -130,6 +140,7 @@ function getStore() {
   }
   if (!Array.isArray(data.foodLogs)) data.foodLogs = [];
   if (!Array.isArray(data.messages)) data.messages = [];
+  if (!Array.isArray(data.customFoods)) data.customFoods = [];
   return data;
 }
 
@@ -186,6 +197,8 @@ function handleAuthState(account) {
         email: account.email,
         goal: account.goal || "",
         allergies: account.allergies || "",
+        heightCm: account.heightCm ?? null,
+        weightKg: account.weightKg ?? null,
         status: "Novo paciente",
         last: "Ainda não consultou",
         createdAt: account.createdAt || new Date().toISOString()
@@ -303,6 +316,8 @@ function renderPatientPortal() {
   const plans = state.patientPlan?.plans || [];
   const profileGoal = document.getElementById("patient-profile-goal");
   const profileAllergies = document.getElementById("patient-profile-allergies");
+  document.getElementById("patient-profile-height").value = patient?.heightCm ?? "";
+  document.getElementById("patient-profile-weight").value = patient?.weightKg ?? "";
   profileGoal.value = patient?.goal || "";
   profileAllergies.value = patient?.allergies || "";
   if (!plans.length) {
@@ -342,8 +357,10 @@ function renderPatients(search = "") {
       : patient.email
         ? '<span class="status pending">Aguardando cadastro</span>'
         : '<span class="status pending">Adicione e-mail</span>';
+    const height = patient.heightCm ? `${formatNumber(patient.heightCm)} cm` : "Altura não informada";
+    const weight = patient.weightKg ? `${formatNumber(patient.weightKg)} kg` : "Peso não informado";
     return `<tr>
-      <td><div class="table-person"><span class="avatar">${escapeHTML(getInitials(patient.name))}</span>${escapeHTML(patient.name)}</div></td>
+      <td><div class="table-person"><span class="avatar">${escapeHTML(getInitials(patient.name))}</span><span class="patient-details"><strong>${escapeHTML(patient.name)}</strong><small>${escapeHTML(height)} · ${escapeHTML(weight)}</small></span></div></td>
       <td>${escapeHTML(patient.goal || "Não informado")}</td>
       <td>${escapeHTML(patient.allergies || "Nenhuma informada")}</td>
       <td>${escapeHTML(patient.last || "Ainda não consultou")}</td>
@@ -523,18 +540,24 @@ function renderPlans() {
 
 function renderPlanMeals(plan) {
   const schedule = Array.isArray(plan.mealSchedule) ? plan.mealSchedule : [];
-  const populatedMeals = schedule.filter(meal => String(meal.content || "").trim());
-  if (!populatedMeals.length) {
-    return plan.meals
-      ? `<p class="plan-meals">${escapeHTML(plan.meals)}</p>`
-      : '<p class="plan-meals">Nenhuma refeição detalhada.</p>';
-  }
-  return `<div class="plan-meal-list">${populatedMeals.map(meal => `
+  const populatedMeals = schedule.filter(meal =>
+    String(meal.content || "").trim() || (Array.isArray(meal.foods) && meal.foods.length)
+  );
+  const mealContent = populatedMeals.length ? `<div class="plan-meal-list">${populatedMeals.map(meal => `
     <section class="plan-meal">
       <div><h4>${escapeHTML(meal.name)}</h4>${meal.time ? `<time>${escapeHTML(meal.time)}</time>` : ""}</div>
-      <p>${escapeHTML(meal.content)}</p>
+      ${meal.content ? `<p>${escapeHTML(meal.content)}</p>` : ""}
+      ${renderFoodNutrition(meal.foods || [])}
     </section>`).join("")}</div>
-    ${plan.meals ? `<p class="plan-meals plan-general-notes"><strong>Orientações gerais</strong><br>${escapeHTML(plan.meals)}</p>` : ""}`;
+    ` : "";
+  const nutritionSummary = renderPlanNutritionSummary(schedule);
+  const generalNotes = plan.meals
+    ? `<p class="plan-meals plan-general-notes"><strong>Orientações gerais</strong><br>${escapeHTML(plan.meals)}</p>`
+    : "";
+  const waterGoal = Number(plan.waterMl) > 0
+    ? `<p class="plan-water-goal">Meta de água definida pelo nutricionista: ${formatNumber(Number(plan.waterMl) / 1000)} L por dia</p>`
+    : "";
+  return `${nutritionSummary}${mealContent || (!plan.meals ? '<p class="plan-meals">Nenhuma refeição detalhada.</p>' : "")}${generalNotes}${waterGoal}`;
 }
 
 async function loadAdminUsers() {
@@ -572,6 +595,120 @@ function escapeHTML(value) {
   })[character]);
 }
 
+function formatNumber(value, maximumFractionDigits = 1) {
+  return new Intl.NumberFormat("pt-BR", { maximumFractionDigits }).format(Number(value));
+}
+
+function getAvailableFoods() {
+  const customFoods = state.user
+    ? getStore().customFoods.filter(food => food.ownerId === state.user.id)
+    : [];
+  return [...foodCatalog, ...customFoods];
+}
+
+function getPlanFood(item) {
+  const catalogFood = foodCatalog.find(food => food.id === item.foodId);
+  if (catalogFood) return catalogFood;
+  if (item.foodSnapshot && item.foodSnapshot.name) return item.foodSnapshot;
+  if (item.name && Number.isFinite(Number(item.kcal))) return item;
+  return getAvailableFoods().find(food => food.id === item.foodId);
+}
+
+function renderFoodOptions() {
+  const select = document.getElementById("plan-food-select");
+  const previousValue = select.value;
+  const query = document.getElementById("plan-food-search").value.trim().toLocaleLowerCase("pt-BR");
+  const foods = getAvailableFoods()
+    .filter(food => food.name.toLocaleLowerCase("pt-BR").includes(query))
+    .sort((left, right) => left.name.localeCompare(right.name, "pt-BR"));
+  const groups = new Map();
+  foods.forEach(food => {
+    const category = food.category || (food.source === "Personalizado" ? "Meus alimentos" : "Outros");
+    if (!groups.has(category)) groups.set(category, []);
+    groups.get(category).push(food);
+  });
+  select.innerHTML = groups.size
+    ? [...groups].map(([category, entries]) => `<optgroup label="${escapeHTML(category)}">${entries.map(food =>
+      `<option value="${escapeHTML(food.id)}">${escapeHTML(food.name)} — ${escapeHTML(food.source)}</option>`
+    ).join("")}</optgroup>`).join("")
+    : '<option value="">Nenhum alimento encontrado; use “Cadastrar alimento”.</option>';
+  if (foods.some(food => food.id === previousValue)) select.value = previousValue;
+}
+
+function calculateFoodNutrients(items) {
+  return items.reduce((total, item) => {
+    const food = getPlanFood(item);
+    const grams = Number(item.grams);
+    if (!food || !Number.isFinite(grams) || grams <= 0) return total;
+    const factor = grams / 100;
+    total.kcal += food.kcal * factor;
+    total.carbs += food.carbs * factor;
+    total.protein += food.protein * factor;
+    total.fat += food.fat * factor;
+    return total;
+  }, { kcal: 0, carbs: 0, protein: 0, fat: 0 });
+}
+
+function renderFoodNutrition(items) {
+  if (!items.length) return "";
+  const rows = items.map(item => {
+    const food = getPlanFood(item);
+    if (!food) return "";
+    const nutrients = calculateFoodNutrients([item]);
+    return `<p><strong>${escapeHTML(food.name)}</strong> (${escapeHTML(food.source)}) — ${formatNumber(item.grams)} g (${formatNumber(nutrients.kcal)} kcal; C ${formatNumber(nutrients.carbs)} g; P ${formatNumber(nutrients.protein)} g; G ${formatNumber(nutrients.fat)} g)</p>`;
+  }).join("");
+  const total = calculateFoodNutrients(items);
+  return `<div class="plan-food-nutrition">${rows}<p class="plan-food-summary">Total estimado desta refeição: ${formatNumber(total.kcal)} kcal · carboidratos ${formatNumber(total.carbs)} g · proteínas ${formatNumber(total.protein)} g · gorduras ${formatNumber(total.fat)} g</p></div>`;
+}
+
+function renderPlanNutritionSummary(schedule) {
+  const foodItems = schedule.flatMap(meal => meal.foods || []);
+  if (!foodItems.length) return "";
+  const total = calculateFoodNutrients(foodItems);
+  return `<div class="plan-nutrition-overview"><strong>Total estimado dos alimentos cadastrados: ${formatNumber(total.kcal)} kcal</strong><span>Carboidratos ${formatNumber(total.carbs)} g · proteínas ${formatNumber(total.protein)} g · gorduras ${formatNumber(total.fat)} g</span><small>O cálculo considera os alimentos e porções informados; orientações em texto livre não entram no total.</small></div>`;
+}
+
+function renderPlanFoodEditor() {
+  const container = document.getElementById("plan-food-items");
+  if (!container) return;
+  if (!state.planFoodItems.length) {
+    container.innerHTML = '<p class="form-hint">Nenhum alimento adicionado ao plano.</p>';
+    return;
+  }
+  container.innerHTML = state.planFoodItems.map((item, index) => {
+    const food = getPlanFood(item);
+    const meal = mealDefinitions.find(entry => entry.id === item.mealId);
+    if (!food || !meal) return "";
+    const nutrients = calculateFoodNutrients([item]);
+    return `<div class="plan-food-row">
+      <span><strong>${escapeHTML(meal.name)}:</strong> ${escapeHTML(food.name)} (${escapeHTML(food.source)}) · ${formatNumber(item.grams)} g · ${formatNumber(nutrients.kcal)} kcal</span>
+      <span>C ${formatNumber(nutrients.carbs)} g · P ${formatNumber(nutrients.protein)} g · G ${formatNumber(nutrients.fat)} g</span>
+      <button type="button" class="button-secondary" data-remove-plan-food="${index}" aria-label="Remover ${escapeHTML(food.name)}">Remover</button>
+    </div>`;
+  }).join("");
+}
+
+function readPatientMeasurements(formData, required = false) {
+  const fields = [
+    { name: "heightCm", label: "altura", min: 80, max: 250 },
+    { name: "weightKg", label: "peso", min: 20, max: 400 }
+  ];
+  return fields.reduce((measurements, field) => {
+    const rawValue = String(formData.get(field.name) || "").trim();
+    if (!rawValue) {
+      if (required) throw new Error(`Informe ${field.label} para continuar.`);
+      measurements[field.name] = null;
+      return measurements;
+    }
+    const value = Number(rawValue);
+    if (!Number.isFinite(value) || value < field.min || value > field.max) {
+      throw new Error(`Informe ${field.label} entre ${field.min} e ${field.max} ${field.name === "heightCm" ? "cm" : "kg"}.`);
+    }
+    measurements[field.name] = value;
+    return measurements;
+  }, {});
+}
+
 function openPatientModal() {
   state.lastFocusedElement = document.activeElement;
   modal.classList.add("open");
@@ -585,6 +722,24 @@ function closePatientModal() {
   state.lastFocusedElement?.focus();
 }
 
+function populateFoodComposer() {
+  document.getElementById("plan-food-meal").innerHTML = mealDefinitions.map(meal =>
+    `<option value="${escapeHTML(meal.id)}">${escapeHTML(meal.name)}</option>`
+  ).join("");
+  document.getElementById("plan-food-search").value = "";
+  renderFoodOptions();
+}
+
+function setCustomFoodFormOpen(isOpen) {
+  const form = document.getElementById("custom-food-form");
+  form.hidden = !isOpen;
+  document.getElementById("toggle-custom-food").setAttribute("aria-expanded", String(isOpen));
+  form.querySelectorAll("input").forEach(input => {
+    input.disabled = !isOpen;
+    if (!isOpen) input.value = "";
+  });
+}
+
 function openPlanModal() {
   if (!state.patients.length) {
     showToast("Cadastre um paciente antes de criar um plano alimentar.");
@@ -595,6 +750,10 @@ function openPlanModal() {
   selector.innerHTML = state.patients.map(patient =>
     `<option value="${escapeHTML(patient.id)}">${escapeHTML(patient.name)}</option>`
   ).join("");
+  populateFoodComposer();
+  setCustomFoodFormOpen(false);
+  state.planFoodItems = [];
+  renderPlanFoodEditor();
   state.lastFocusedElement = document.activeElement;
   planModal.classList.add("open");
   document.getElementById("plan-title").focus();
@@ -606,6 +765,9 @@ function closePlanModal() {
   document.getElementById("plan-form").reset();
   document.querySelectorAll("#plan-form .plan-meal-item input, #plan-form .plan-meal-item textarea")
     .forEach(field => { field.value = ""; });
+  setCustomFoodFormOpen(false);
+  state.planFoodItems = [];
+  renderPlanFoodEditor();
   state.editingPlanId = null;
   document.getElementById("plan-modal-title").textContent = "Novo plano alimentar";
   document.querySelector("#plan-form button[type='submit']").textContent = "Salvar plano";
@@ -626,11 +788,20 @@ function editPlan(planId) {
   selector.value = plan.patientId;
   document.getElementById("plan-title").value = plan.title;
   document.getElementById("plan-meals").value = plan.meals;
+  document.getElementById("plan-water-liters").value =
+    Number(plan.waterMl) > 0 ? Number(plan.waterMl) / 1000 : "";
+  populateFoodComposer();
+  setCustomFoodFormOpen(false);
+  state.planFoodItems = [];
   document.querySelectorAll("#plan-form .plan-meal-item").forEach(element => {
     const meal = (plan.mealSchedule || []).find(item => item.id === element.dataset.mealId);
     element.querySelector("input[type='time']").value = meal?.time || "";
     element.querySelector("textarea").value = meal?.content || "";
+    (meal?.foods || []).forEach(food => {
+      state.planFoodItems.push({ ...food, mealId: meal.id, foodId: food.foodId, grams: Number(food.grams) });
+    });
   });
+  renderPlanFoodEditor();
   state.editingPlanId = plan.id;
   state.lastFocusedElement = document.activeElement;
   document.getElementById("plan-modal-title").textContent = "Editar plano alimentar";
@@ -724,6 +895,7 @@ function savePatient(event) {
   };
   if (!patientData.name) return;
   try {
+    Object.assign(patientData, readPatientMeasurements(formData));
     const data = getStore();
     if (data.patients.some(patient =>
       patient.ownerId === state.user.id && String(patient.email || "").toLowerCase() === patientData.email.toLowerCase()
@@ -733,6 +905,10 @@ function savePatient(event) {
     const account = data.accounts.find(user =>
       user.role === "patient" && user.email.toLowerCase() === patientData.email.toLowerCase()
     );
+    if (account) {
+      patientData.heightCm = patientData.heightCm ?? account.heightCm ?? null;
+      patientData.weightKg = patientData.weightKg ?? account.weightKg ?? null;
+    }
     const patient = {
       id: createId(),
       ownerId: state.user.id,
@@ -746,6 +922,8 @@ function savePatient(event) {
     if (account) {
       account.goal = patientData.goal;
       account.allergies = patientData.allergies;
+      if (patientData.heightCm !== null) account.heightCm = patientData.heightCm;
+      if (patientData.weightKg !== null) account.weightKg = patientData.weightKg;
     }
     data.patients.unshift(patient);
     saveStore(data);
@@ -770,6 +948,7 @@ function savePatientProfile(event) {
   const goal = String(formData.get("goal") || "").trim();
   const allergies = String(formData.get("allergies") || "").trim();
   try {
+    const measurements = readPatientMeasurements(formData);
     const data = getStore();
     const patient = data.patients.find(item =>
       item.accountId === state.user.id || item.email.toLowerCase() === state.user.email.toLowerCase()
@@ -777,14 +956,20 @@ function savePatientProfile(event) {
     if (!patient) throw new Error("Não foi possível localizar seu cadastro.");
     patient.goal = goal;
     patient.allergies = allergies;
+    patient.heightCm = measurements.heightCm;
+    patient.weightKg = measurements.weightKg;
     const account = data.accounts.find(item => item.id === state.user.id);
     if (account) {
       account.goal = goal;
       account.allergies = allergies;
+      account.heightCm = measurements.heightCm;
+      account.weightKg = measurements.weightKg;
     }
     saveStore(data);
     state.patientPlan.patient = patient;
-    showToast("Objetivo e cuidados atualizados para o nutricionista.");
+    state.user.heightCm = measurements.heightCm;
+    state.user.weightKg = measurements.weightKg;
+    showToast("Perfil atualizado para o nutricionista.");
   } catch (error) {
     console.error("Erro ao atualizar informações do paciente:", error);
     showToast(`Não foi possível atualizar suas informações: ${error.message}`);
@@ -920,6 +1105,75 @@ function replyToPatientMessage(event) {
   }
 }
 
+function addPlanFood() {
+  const mealId = document.getElementById("plan-food-meal").value;
+  const foodId = document.getElementById("plan-food-select").value;
+  const grams = Number(document.getElementById("plan-food-grams").value);
+  const food = getAvailableFoods().find(entry => entry.id === foodId);
+  if (!mealDefinitions.some(meal => meal.id === mealId) ||
+      !food ||
+      !Number.isFinite(grams) || grams < 1 || grams > 3000) {
+    showToast("Escolha uma refeição, um alimento e uma porção entre 1 e 3000 g.");
+    return;
+  }
+  state.planFoodItems.push({
+    mealId,
+    foodId,
+    grams,
+    foodSnapshot: {
+      name: food.name,
+      source: food.source,
+      kcal: food.kcal,
+      carbs: food.carbs,
+      protein: food.protein,
+      fat: food.fat
+    }
+  });
+  renderPlanFoodEditor();
+}
+
+function saveCustomFood() {
+  const form = document.getElementById("custom-food-form");
+  const requiredIds = ["custom-food-name", "custom-food-kcal", "custom-food-carbs", "custom-food-protein", "custom-food-fat"];
+  if (requiredIds.some(id => !document.getElementById(id).value.trim())) {
+    showToast("Preencha o nome e todos os valores nutricionais por 100 g.");
+    return;
+  }
+  const invalidInput = [...form.querySelectorAll("input")].find(input => !input.checkValidity());
+  if (invalidInput) {
+    invalidInput.reportValidity();
+    return;
+  }
+  const food = {
+    id: `custom-${createId()}`,
+    ownerId: state.user.id,
+    name: document.getElementById("custom-food-name").value.trim(),
+    category: "Meus alimentos",
+    source: document.getElementById("custom-food-source").value.trim() || "Personalizado",
+    kcal: Number(document.getElementById("custom-food-kcal").value),
+    carbs: Number(document.getElementById("custom-food-carbs").value),
+    protein: Number(document.getElementById("custom-food-protein").value),
+    fat: Number(document.getElementById("custom-food-fat").value)
+  };
+  if (!food.name || ![food.kcal, food.carbs, food.protein, food.fat].every(Number.isFinite)) {
+    showToast("Informe o nome e os valores nutricionais válidos por 100 g.");
+    return;
+  }
+  try {
+    const data = getStore();
+    data.customFoods.push(food);
+    saveStore(data);
+    document.getElementById("plan-food-search").value = "";
+    renderFoodOptions();
+    document.getElementById("plan-food-select").value = food.id;
+    setCustomFoodFormOpen(false);
+    showToast("Alimento salvo na sua lista para usar em outros planos.");
+  } catch (error) {
+    console.error("Erro ao salvar alimento personalizado:", error);
+    showToast(`Não foi possível salvar o alimento: ${error.message}`);
+  }
+}
+
 function savePlan(event) {
   event.preventDefault();
   const formData = new FormData(event.currentTarget);
@@ -929,20 +1183,47 @@ function savePlan(event) {
       id: meal.id,
       name: meal.name,
       time: String(element.querySelector("input[type='time']").value || ""),
-      content: String(element.querySelector("textarea").value || "").trim()
+      content: String(element.querySelector("textarea").value || "").trim(),
+      foods: state.planFoodItems
+        .filter(item => item.mealId === meal.id)
+        .map(item => {
+          const food = getPlanFood(item);
+          return {
+            foodId: item.foodId,
+            grams: item.grams,
+            foodSnapshot: food ? {
+              name: food.name,
+              source: food.source,
+              kcal: food.kcal,
+              carbs: food.carbs,
+              protein: food.protein,
+              fat: food.fat
+            } : null
+          };
+        })
     };
-  }).filter(meal => meal.content);
+  }).filter(meal => meal.content || meal.foods.length);
+  const waterLitersRaw = String(formData.get("waterLiters") || "").trim();
+  const waterLiters = waterLitersRaw ? Number(waterLitersRaw) : null;
   const payload = {
     patientId: String(formData.get("patientId") || ""),
     title: String(formData.get("title") || "").trim(),
     meals: String(formData.get("meals") || "").trim(),
-    mealSchedule
+    mealSchedule,
+    waterMl: waterLiters === null ? null : Math.round(waterLiters * 1000)
   };
+  if (waterLiters !== null && (!Number.isFinite(waterLiters) || waterLiters < 0.1 || waterLiters > 10)) {
+    showToast("Informe uma meta de água entre 0,1 e 10 litros por dia ou deixe o campo vazio.");
+    return;
+  }
   if (!payload.patientId || !payload.title || (!payload.meals && !payload.mealSchedule.length)) {
     showToast("Preencha o nome e informe pelo menos uma refeição ou orientação geral.");
     return;
   }
   try {
+    if (mealSchedule.some(meal => meal.foods.some(food => !food.foodSnapshot))) {
+      throw new Error("Um alimento deste plano não está mais disponível.");
+    }
     const patient = state.patients.find(item => item.id === payload.patientId);
     if (!patient) throw new Error("Selecione um paciente da sua conta.");
     const data = getStore();
@@ -965,6 +1246,7 @@ function savePlan(event) {
         title: payload.title,
         meals: payload.meals,
         mealSchedule: payload.mealSchedule,
+        waterMl: payload.waterMl,
         updatedAt
       };
       data.plans[index] = plan;
@@ -979,6 +1261,7 @@ function savePlan(event) {
         title: payload.title,
         meals: payload.meals,
         mealSchedule: payload.mealSchedule,
+        waterMl: payload.waterMl,
         updatedAt
       };
       data.plans.unshift(plan);
@@ -1036,6 +1319,8 @@ function updateAuthMode() {
   authNameField.hidden = !signup;
   document.querySelectorAll(".signup-patient-field").forEach(field => { field.hidden = !signup; });
   document.getElementById("auth-name").required = signup;
+  document.getElementById("auth-height").required = signup;
+  document.getElementById("auth-weight").required = signup;
   authPassword.autocomplete = signup ? "new-password" : "current-password";
   authSubmit.textContent = patientSignup ? "Criar conta de paciente" : "Entrar";
   document.getElementById("auth-title").textContent = patientSignup
@@ -1043,6 +1328,9 @@ function updateAuthMode() {
     : "Bem-vindo(a) ao NutriFlow";
   document.getElementById("auth-toggle-text").textContent = patientSignup
     ? "Já tem uma conta?" : "É paciente e ainda não tem conta?";
+  document.getElementById("auth-guidance").textContent = patientSignup
+    ? "Informe sua altura e seu peso para completar o cadastro. Esses dados poderão ser atualizados no seu perfil."
+    : "Entre com seus dados cadastrados. Pacientes podem criar uma conta para acessar seus planos.";
   document.getElementById("auth-toggle").textContent = patientSignup ? "Entrar" : "Criar conta de paciente";
   document.getElementById("auth-guidance").textContent = patientSignup
     ? "Informe seu objetivo e alergias para o nutricionista. Use o mesmo e-mail do cadastro do consultório."
@@ -1103,6 +1391,7 @@ authForm.addEventListener("submit", async event => {
       if (!payload.name || payload.name.length > 80) throw new Error("Informe seu nome (até 80 caracteres).");
       if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(payload.email)) throw new Error("Informe um e-mail válido.");
       if (payload.password.length < 8) throw new Error("Use uma senha com pelo menos 8 caracteres.");
+      const measurements = readPatientMeasurements(formData, true);
       if (data.accounts.some(user => user.email.toLowerCase() === payload.email)) {
         throw new Error("Este e-mail já possui uma conta. Tente entrar.");
       }
@@ -1114,6 +1403,7 @@ authForm.addEventListener("submit", async event => {
         role: "patient",
         goal: payload.goal,
         allergies: payload.allergies,
+        ...measurements,
         createdAt: new Date().toISOString()
       };
       data.accounts.push(account);
@@ -1125,6 +1415,8 @@ authForm.addEventListener("submit", async event => {
         patient.name = payload.name;
         if (payload.goal) patient.goal = payload.goal;
         if (payload.allergies) patient.allergies = payload.allergies;
+        patient.heightCm = measurements.heightCm;
+        patient.weightKg = measurements.weightKg;
       } else {
         patient = {
           id: createId(),
@@ -1134,6 +1426,7 @@ authForm.addEventListener("submit", async event => {
           email: account.email,
           goal: payload.goal,
           allergies: payload.allergies,
+          ...measurements,
           status: "Novo paciente",
           last: "Ainda não consultou",
           createdAt: new Date().toISOString()
@@ -1182,6 +1475,19 @@ document.getElementById("patient-profile-form").addEventListener("submit", saveP
 document.getElementById("food-log-form").addEventListener("submit", saveFoodLog);
 document.getElementById("patient-message-form").addEventListener("submit", sendPatientMessage);
 document.getElementById("plan-form").addEventListener("submit", savePlan);
+document.getElementById("add-plan-food").addEventListener("click", addPlanFood);
+document.getElementById("plan-food-search").addEventListener("input", renderFoodOptions);
+document.getElementById("toggle-custom-food").addEventListener("click", event => {
+  const isOpen = event.currentTarget.getAttribute("aria-expanded") !== "true";
+  setCustomFoodFormOpen(isOpen);
+});
+document.getElementById("save-custom-food").addEventListener("click", saveCustomFood);
+document.getElementById("plan-food-items").addEventListener("click", event => {
+  const removeButton = event.target.closest("[data-remove-plan-food]");
+  if (!removeButton) return;
+  state.planFoodItems.splice(Number(removeButton.dataset.removePlanFood), 1);
+  renderPlanFoodEditor();
+});
 document.getElementById("meal-plans-list").addEventListener("click", event => {
   const editButton = event.target.closest("[data-edit-plan]");
   const deleteButton = event.target.closest("[data-delete-plan]");

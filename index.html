@@ -248,6 +248,14 @@
             <input id="auth-goal" name="goal" maxlength="160" placeholder="Ex.: melhorar minha alimentação">
           </div>
           <div class="form-field signup-patient-field" hidden>
+            <label for="auth-height">Altura (cm)</label>
+            <input id="auth-height" name="heightCm" type="number" min="80" max="250" step="0.1" inputmode="decimal" placeholder="Ex.: 165">
+          </div>
+          <div class="form-field signup-patient-field" hidden>
+            <label for="auth-weight">Peso (kg)</label>
+            <input id="auth-weight" name="weightKg" type="number" min="20" max="400" step="0.1" inputmode="decimal" placeholder="Ex.: 68">
+          </div>
+          <div class="form-field signup-patient-field" hidden>
             <label for="auth-allergies">Alergias ou restrições alimentares</label>
             <textarea id="auth-allergies" name="allergies" rows="2" maxlength="500" placeholder="Se não tiver, deixe em branco"></textarea>
           </div>
@@ -397,6 +405,8 @@
             <div class="panel-heading"><div><h2>Meu objetivo e cuidados</h2><p>Conte ao nutricionista seu objetivo e alergias ou restrições.</p></div></div>
             <form id="patient-profile-form" class="form-grid">
               <div class="form-field"><label for="patient-profile-goal">Objetivo principal</label><input id="patient-profile-goal" name="goal" maxlength="160" placeholder="Ex.: melhorar minha alimentação"></div>
+              <div class="form-field"><label for="patient-profile-height">Altura (cm)</label><input id="patient-profile-height" name="heightCm" type="number" min="80" max="250" step="0.1" inputmode="decimal" placeholder="Ex.: 165"></div>
+              <div class="form-field"><label for="patient-profile-weight">Peso (kg)</label><input id="patient-profile-weight" name="weightKg" type="number" min="20" max="400" step="0.1" inputmode="decimal" placeholder="Ex.: 68"></div>
               <div class="form-field"><label for="patient-profile-allergies">Alergias ou restrições alimentares</label><textarea id="patient-profile-allergies" name="allergies" rows="3" maxlength="500" placeholder="Descreva ou deixe em branco"></textarea></div>
               <button type="submit" class="button-primary">Atualizar informações</button>
             </form>
@@ -433,7 +443,7 @@
   <div class="modal-backdrop" id="patient-modal" role="dialog" aria-modal="true" aria-labelledby="modal-title">
     <div class="modal">
       <div class="modal-heading"><div><h2 id="modal-title">Adicionar paciente</h2><p>Preencha os dados para criar um novo cadastro.</p></div><button class="icon-button" id="close-modal" aria-label="Fechar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="m6 6 12 12M18 6 6 18"/></svg></button></div>
-      <form id="patient-form"><div class="form-grid"><div class="form-field"><label for="patient-name-input">Nome completo</label><input id="patient-name-input" name="name" maxlength="100" required placeholder="Ex.: Ana Silva"></div><div class="form-field"><label for="patient-email-input">E-mail</label><input id="patient-email-input" name="email" type="email" maxlength="254" required placeholder="ana@email.com"></div><div class="form-field"><label for="patient-goal-input">Objetivo principal</label><input id="patient-goal-input" name="goal" maxlength="160" placeholder="Ex.: reeducação alimentar"></div><div class="form-field"><label for="patient-allergies-input">Alergias ou restrições alimentares</label><textarea id="patient-allergies-input" name="allergies" rows="3" maxlength="500" placeholder="Se não informado, deixe em branco"></textarea></div></div><p class="form-hint">Peça ao paciente que crie a conta com este mesmo e-mail para acessar o plano. Confirme alergias com o paciente.</p><div class="modal-actions"><button type="button" class="button-secondary" id="cancel-modal">Cancelar</button><button type="submit" class="button-primary">Salvar paciente</button></div></form>
+      <form id="patient-form"><div class="form-grid"><div class="form-field"><label for="patient-name-input">Nome completo</label><input id="patient-name-input" name="name" maxlength="100" required placeholder="Ex.: Ana Silva"></div><div class="form-field"><label for="patient-email-input">E-mail</label><input id="patient-email-input" name="email" type="email" maxlength="254" required placeholder="ana@email.com"></div><div class="form-field"><label for="patient-goal-input">Objetivo principal</label><input id="patient-goal-input" name="goal" maxlength="160" placeholder="Ex.: reeducação alimentar"></div><div class="form-field"><label for="patient-height-input">Altura (cm)</label><input id="patient-height-input" name="heightCm" type="number" min="80" max="250" step="0.1" inputmode="decimal" placeholder="Ex.: 165"></div><div class="form-field"><label for="patient-weight-input">Peso (kg)</label><input id="patient-weight-input" name="weightKg" type="number" min="20" max="400" step="0.1" inputmode="decimal" placeholder="Ex.: 68"></div><div class="form-field"><label for="patient-allergies-input">Alergias ou restrições alimentares</label><textarea id="patient-allergies-input" name="allergies" rows="3" maxlength="500" placeholder="Se não informado, deixe em branco"></textarea></div></div><p class="form-hint">Peça ao paciente que crie a conta com este mesmo e-mail para acessar o plano. Confirme alergias com o paciente.</p><div class="modal-actions"><button type="button" class="button-secondary" id="cancel-modal">Cancelar</button><button type="submit" class="button-primary">Salvar paciente</button></div></form>
     </div>
   </div>
   <div class="modal-backdrop" id="plan-modal" role="dialog" aria-modal="true" aria-labelledby="plan-modal-title">
@@ -453,7 +463,35 @@
             <div class="plan-meal-item" data-meal-id="dinner"><label for="meal-dinner-time">Jantar</label><input id="meal-dinner-time" name="time-dinner" type="time" aria-label="Horário do jantar"><textarea name="meal-dinner" aria-label="Alimentos e orientações do jantar" rows="2" maxlength="1000" placeholder="Alimentos e orientações"></textarea></div>
             <div class="plan-meal-item" data-meal-id="supper"><label for="meal-supper-time">Ceia</label><input id="meal-supper-time" name="time-supper" type="time" aria-label="Horário da ceia"><textarea name="meal-supper" aria-label="Alimentos e orientações da ceia" rows="2" maxlength="1000" placeholder="Alimentos e orientações"></textarea></div>
           </div>
+          <div class="food-composer">
+            <h3>Adicionar alimento e calcular porção</h3>
+            <p class="form-hint">Amostra inicial da TACO, com calorias e macronutrientes por 100 g; ajuste pela porção. Não inclui a tabela Tucunduva nem vitaminas. Confira os valores antes de usar.</p>
+            <div class="food-composer-fields">
+              <div class="form-field"><label for="plan-food-meal">Refeição</label><select id="plan-food-meal" name="foodMeal"></select></div>
+              <div class="form-field"><label for="plan-food-search">Buscar alimento</label><input id="plan-food-search" type="search" placeholder="Digite para filtrar a lista" autocomplete="off"></div>
+              <div class="form-field"><label for="plan-food-select">Alimento (TACO — amostra)</label><select id="plan-food-select" name="foodId"></select></div>
+              <div class="form-field"><label for="plan-food-grams">Quantidade (g)</label><input id="plan-food-grams" name="foodGrams" type="number" min="1" max="3000" step="1" value="100" inputmode="decimal"></div>
+              <button type="button" class="button-secondary" id="add-plan-food">Adicionar alimento</button>
+            </div>
+            <button type="button" class="text-link custom-food-toggle" id="toggle-custom-food" aria-expanded="false">Não encontrou? Cadastrar alimento</button>
+            <div class="custom-food-form" id="custom-food-form" hidden>
+              <h4>Adicionar alimento à sua lista</h4>
+              <p class="form-hint">Informe os valores nutricionais para cada 100 g, conforme a tabela que você utiliza.</p>
+              <div class="custom-food-fields">
+                <div class="form-field"><label for="custom-food-name">Nome</label><input id="custom-food-name" maxlength="100" disabled placeholder="Ex.: alimento preparado"></div>
+                <div class="form-field"><label for="custom-food-source">Fonte (opcional)</label><input id="custom-food-source" maxlength="60" disabled placeholder="Ex.: rótulo, TACO"></div>
+                <div class="form-field"><label for="custom-food-kcal">Calorias (kcal)</label><input id="custom-food-kcal" type="number" min="0" max="900" step="0.1" disabled></div>
+                <div class="form-field"><label for="custom-food-carbs">Carboidratos (g)</label><input id="custom-food-carbs" type="number" min="0" max="100" step="0.1" disabled></div>
+                <div class="form-field"><label for="custom-food-protein">Proteínas (g)</label><input id="custom-food-protein" type="number" min="0" max="100" step="0.1" disabled></div>
+                <div class="form-field"><label for="custom-food-fat">Gorduras (g)</label><input id="custom-food-fat" type="number" min="0" max="100" step="0.1" disabled></div>
+                <button type="button" class="button-primary" id="save-custom-food">Salvar alimento</button>
+              </div>
+            </div>
+            <div id="plan-food-items" class="plan-food-items" aria-live="polite"></div>
+          </div>
         </fieldset>
+        <div class="form-field"><label for="plan-water-liters">Meta diária de água definida pelo nutricionista (L/dia)</label><input id="plan-water-liters" name="waterLiters" type="number" min="0.1" max="10" step="0.1" inputmode="decimal" placeholder="Ex.: 2,0"></div>
+        <p class="form-hint">A meta é individual e deve ser definida pelo nutricionista; o peso, sozinho, não determina a necessidade de água.</p>
         <div class="form-field"><label for="plan-meals">Orientações gerais</label><textarea id="plan-meals" name="meals" rows="3" maxlength="2000" placeholder="Observações e orientações complementares"></textarea></div>
         <p class="form-hint">Demonstração local somente: não inclua informações reais de saúde.</p>
       </div><div class="modal-actions"><button type="button" class="button-secondary" id="cancel-plan-modal">Cancelar</button><button type="submit" class="button-primary">Salvar plano</button></div></form>
