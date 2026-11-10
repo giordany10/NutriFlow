@@ -39,6 +39,43 @@ const mealDefinitions = [
   { id: "dinner", name: "Jantar" },
   { id: "supper", name: "Ceia" }
 ];
+const circumferenceFields = [
+  { name: "waistCm", label: "Cintura", min: 30, max: 250 },
+  { name: "hipCm", label: "Quadril", min: 30, max: 250 },
+  { name: "armCm", label: "Braço", min: 10, max: 100 },
+  { name: "neckCm", label: "Pescoço", min: 10, max: 100 },
+  { name: "armRelaxedRightCm", label: "Braço direito relaxado", min: 10, max: 100 },
+  { name: "armRelaxedLeftCm", label: "Braço esquerdo relaxado", min: 10, max: 100 },
+  { name: "armContractedRightCm", label: "Braço direito contraído", min: 10, max: 100 },
+  { name: "armContractedLeftCm", label: "Braço esquerdo contraído", min: 10, max: 100 },
+  { name: "forearmRightCm", label: "Antebraço direito", min: 10, max: 80 },
+  { name: "forearmLeftCm", label: "Antebraço esquerdo", min: 10, max: 80 },
+  { name: "chestCm", label: "Peitoral", min: 30, max: 250 },
+  { name: "abdomenCm", label: "Abdômen", min: 30, max: 250 },
+  { name: "thighProximalRightCm", label: "Coxa proximal direita", min: 20, max: 150 },
+  { name: "thighProximalLeftCm", label: "Coxa proximal esquerda", min: 20, max: 150 },
+  { name: "thighRightCm", label: "Coxa direita", min: 20, max: 150 },
+  { name: "thighLeftCm", label: "Coxa esquerda", min: 20, max: 150 },
+  { name: "calfRightCm", label: "Panturrilha direita", min: 15, max: 100 },
+  { name: "calfLeftCm", label: "Panturrilha esquerda", min: 15, max: 100 }
+];
+const skinfoldFields = [
+  { name: "bicepsMm", label: "Bíceps" },
+  { name: "tricepsMm", label: "Tríceps" },
+  { name: "subscapularMm", label: "Subescapular" },
+  { name: "suprailiacMm", label: "Supra-ilíaca" },
+  { name: "skinfoldAbdominalMm", label: "Abdominal" },
+  { name: "midAxillaryMm", label: "Axilar média" },
+  { name: "skinfoldChestMm", label: "Peitoral" },
+  { name: "skinfoldThighMm", label: "Coxa" }
+];
+const anthropometryChartMetrics = [
+  { field: "weightKg", label: "Peso", unit: "kg" },
+  { field: "heightCm", label: "Altura", unit: "cm" },
+  { field: "bmi", label: "IMC descritivo", unit: "" },
+  ...circumferenceFields.map(field => ({ field: field.name, label: field.label, unit: "cm" })),
+  ...skinfoldFields.map(field => ({ field: field.name, label: `Dobra: ${field.label}`, unit: "mm" }))
+];
 const foodCatalog = [
   { id: "rice-cooked", name: "Arroz tipo 1 cozido", category: "Cereais e derivados", source: "TACO (amostra)", kcal: 128, carbs: 28.1, protein: 2.5, fat: 0.2 },
   { id: "beans-cooked", name: "Feijão carioca cozido", category: "Leguminosas", source: "TACO (amostra)", kcal: 76, carbs: 13.6, protein: 4.8, fat: 0.5 },
@@ -339,6 +376,12 @@ function renderAll() {
 function renderPatientPortal() {
   const patient = state.patientPlan?.patient;
   document.getElementById("portal-patient-name").textContent = patient?.name || "Paciente";
+  renderAnthropometryChart(
+    patient,
+    "patient-anthro-chart-metric",
+    "patient-anthro-chart",
+    "patient-anthro-chart-summary"
+  );
   const container = document.getElementById("patient-plan-list");
   const plans = state.patientPlan?.plans || [];
   const profileGoal = document.getElementById("patient-profile-goal");
@@ -671,6 +714,12 @@ function sortAnthropometry(measurements) {
   );
 }
 
+function getLatestAnthropometryValue(measurements, field) {
+  return sortAnthropometry(measurements).find(measurement =>
+    measurement[field] !== null && measurement[field] !== undefined
+  )?.[field] ?? null;
+}
+
 function readBirthDate(formData, required = false) {
   const birthDate = String(formData.get("birthDate") || "").trim();
   if (!birthDate) {
@@ -698,6 +747,106 @@ function getInitialAnthropometry(patient) {
   }];
 }
 
+function getAnthropometryMetricValue(measurement, field) {
+  if (field === "bmi") {
+    if (measurement.weightKg == null || measurement.heightCm == null || Number(measurement.heightCm) <= 0) return null;
+    return Number(measurement.weightKg) / (Number(measurement.heightCm) / 100) ** 2;
+  }
+  const value = measurement[field];
+  return value == null || !Number.isFinite(Number(value)) ? null : Number(value);
+}
+
+function renderAnthropometryChart(
+  patient,
+  metricSelectId = "anthro-chart-metric",
+  chartId = "anthro-chart",
+  summaryId = "anthro-chart-summary"
+) {
+  const metricSelect = document.getElementById(metricSelectId);
+  const chart = document.getElementById(chartId);
+  const summary = document.getElementById(summaryId);
+  const selectedMetric = metricSelect.value;
+  if (!patient) {
+    metricSelect.disabled = true;
+    metricSelect.innerHTML = '<option value="">Selecione um paciente</option>';
+    summary.innerHTML = '<p class="empty-state">Selecione um paciente para visualizar a evolução.</p>';
+    chart.innerHTML = "";
+    return;
+  }
+
+  const measurements = sortAnthropometry(patient.measurements || []).slice().reverse();
+  const availableMetrics = anthropometryChartMetrics.filter(metric =>
+    measurements.some(measurement => getAnthropometryMetricValue(measurement, metric.field) !== null)
+  );
+  metricSelect.disabled = availableMetrics.length === 0;
+  metricSelect.innerHTML = availableMetrics.length
+    ? availableMetrics.map(metric =>
+      `<option value="${escapeHTML(metric.field)}">${escapeHTML(metric.label)}${metric.unit ? ` (${metric.unit})` : ""}</option>`
+    ).join("")
+    : '<option value="">Sem medidas registradas</option>';
+  if (!availableMetrics.length) {
+    summary.innerHTML = '<p class="empty-state">Salve uma avaliação com pelo menos uma medida para iniciar o gráfico.</p>';
+    chart.innerHTML = "";
+    return;
+  }
+
+  const previousMetric = availableMetrics.some(metric => metric.field === selectedMetric)
+    ? selectedMetric
+    : availableMetrics[0].field;
+  metricSelect.value = previousMetric;
+  const metric = availableMetrics.find(item => item.field === previousMetric);
+  const points = measurements.map(measurement => ({
+    date: measurement.measuredAt,
+    value: getAnthropometryMetricValue(measurement, metric.field)
+  })).filter(point => point.value !== null);
+  const first = points[0];
+  const latest = points[points.length - 1];
+  const unit = metric.unit ? ` ${metric.unit}` : "";
+  if (points.length === 1) {
+    summary.innerHTML = `<p class="form-hint">1 registro: ${escapeHTML(formatDate(first.date))} — <strong>${formatNumber(first.value)}${unit}</strong>. Registre outra avaliação para acompanhar a variação.</p>`;
+  } else {
+    const change = latest.value - first.value;
+    const sign = change > 0 ? "+" : "";
+    summary.innerHTML = `<div class="anthro-change"><span>Primeiro registro<strong>${formatNumber(first.value)}${unit}</strong></span><span>Registro mais recente<strong>${formatNumber(latest.value)}${unit}</strong></span><span>Variação no período<strong>${sign}${formatNumber(change)}${unit}</strong></span></div>`;
+  }
+
+  const width = 720;
+  const height = 250;
+  const left = 60;
+  const right = 700;
+  const top = 20;
+  const bottom = 188;
+  const values = points.map(point => point.value);
+  const minValue = values.reduce((minimum, value) => Math.min(minimum, value), Infinity);
+  const maxValue = values.reduce((maximum, value) => Math.max(maximum, value), -Infinity);
+  const padding = (maxValue - minValue) * 0.15 || Math.max(Math.abs(maxValue) * 0.05, 1);
+  const scaleMin = minValue - padding;
+  const scaleMax = maxValue + padding;
+  const coordinates = points.map((point, index) => ({
+    ...point,
+    x: points.length === 1 ? (left + right) / 2 : left + index / (points.length - 1) * (right - left),
+    y: bottom - (point.value - scaleMin) / (scaleMax - scaleMin) * (bottom - top)
+  }));
+  const grid = Array.from({ length: 5 }, (_, index) => {
+    const y = top + index / 4 * (bottom - top);
+    const value = scaleMax - index / 4 * (scaleMax - scaleMin);
+    return `<line x1="${left}" y1="${y}" x2="${right}" y2="${y}" class="anthro-chart-grid"/><text x="${left - 9}" y="${y + 4}" text-anchor="end" class="anthro-chart-axis">${formatNumber(value)}</text>`;
+  }).join("");
+  const line = coordinates.map(point => `${point.x},${point.y}`).join(" ");
+  const dots = coordinates.map(point =>
+    `<circle cx="${point.x}" cy="${point.y}" r="5" class="anthro-chart-dot"><title>${escapeHTML(formatDate(point.date))}: ${formatNumber(point.value)}${escapeHTML(unit)}</title></circle>`
+  ).join("");
+  const dateLabels = points.length === 1
+    ? `<text x="${(left + right) / 2}" y="222" text-anchor="middle" class="anthro-chart-axis">${escapeHTML(formatDate(first.date))}</text>`
+    : `<text x="${left}" y="222" text-anchor="start" class="anthro-chart-axis">${escapeHTML(formatDate(first.date))}</text><text x="${right}" y="222" text-anchor="end" class="anthro-chart-axis">${escapeHTML(formatDate(latest.date))}</text>`;
+  chart.innerHTML = `<svg viewBox="0 0 ${width} ${height}" role="img" aria-label="Evolução de ${escapeHTML(metric.label)} em ${points.length} avaliações">
+    ${grid}
+    ${points.length > 1 ? `<polyline points="${line}" class="anthro-chart-line"/>` : ""}
+    ${dots}
+    ${dateLabels}
+  </svg>`;
+}
+
 function renderAnthropometry() {
   const patientSelect = document.getElementById("anthro-patient");
   if (!patientSelect) return;
@@ -716,6 +865,7 @@ function renderAnthropometry() {
   const summary = document.getElementById("anthro-patient-summary");
   const history = document.getElementById("anthro-history-table");
   const form = document.getElementById("anthro-form");
+  const chartMetric = document.getElementById("anthro-chart-metric");
   const today = new Date();
   const dateInput = document.getElementById("anthro-date");
   dateInput.max = getLocalDateKey(today);
@@ -723,34 +873,65 @@ function renderAnthropometry() {
     summary.innerHTML = patients.length
       ? '<p class="empty-state">Selecione um paciente para consultar o acompanhamento.</p>'
       : '<p class="empty-state">Cadastre um paciente para iniciar o acompanhamento antropométrico.</p>';
-    history.innerHTML = '<tr><td colspan="8" class="empty-state">Selecione um paciente para ver o histórico.</td></tr>';
-    form.querySelectorAll("input, button").forEach(field => { field.disabled = true; });
+    history.innerHTML = '<tr><td colspan="9" class="empty-state">Selecione um paciente para ver o histórico.</td></tr>';
+    form.querySelectorAll("input, select, button").forEach(field => { field.disabled = true; });
+    chartMetric.disabled = true;
+    renderAnthropometryChart(null);
     patientSelect.disabled = patients.length === 0;
     return;
   }
-  form.querySelectorAll("input, button").forEach(field => { field.disabled = false; });
+  form.querySelectorAll("input, select, button").forEach(field => { field.disabled = false; });
   patientSelect.disabled = false;
   if (!dateInput.value) dateInput.value = dateInput.max;
   const measurements = sortAnthropometry(selectedPatient.measurements || []);
   const latest = measurements[0];
+  const latestWeight = getLatestAnthropometryValue(measurements, "weightKg");
+  const latestHeight = getLatestAnthropometryValue(measurements, "heightCm");
   const age = getPatientAge(selectedPatient.birthDate);
   summary.innerHTML = `<div><strong>${escapeHTML(selectedPatient.name)}</strong><span>${escapeHTML(getPatientAgeLabel(selectedPatient.birthDate))} · ${escapeHTML(getPatientAgeGroup(selectedPatient.birthDate).label)}</span></div>${latest
-    ? `<div class="anthro-latest"><span>Último peso <strong>${formatNumber(latest.weightKg)} kg</strong></span><span>Altura <strong>${formatNumber(latest.heightCm)} cm</strong></span><span>IMC descritivo <strong>${formatNumber(latest.weightKg / (latest.heightCm / 100) ** 2, 1)}</strong></span></div>`
+    ? `<div class="anthro-latest"><span>Último peso <strong>${latestWeight === null ? "—" : `${formatNumber(latestWeight)} kg`}</strong></span><span>Altura <strong>${latestHeight === null ? "—" : `${formatNumber(latestHeight)} cm`}</strong></span><span>IMC descritivo <strong>${latestWeight !== null && latestHeight !== null ? formatNumber(latestWeight / (latestHeight / 100) ** 2, 1) : "—"}</strong></span></div>`
     : '<p class="form-hint">Ainda não há avaliações registradas para este paciente.</p>'}${age !== null && age < 18
       ? '<p class="form-hint">Paciente menor de 18 anos: o IMC exige interpretação por idade e sexo e não deve ser avaliado pelos pontos de corte de adultos.</p>'
       : ""}`;
-  history.innerHTML = measurements.length ? measurements.map(measurement => `
+  history.innerHTML = measurements.length ? measurements.map(measurement => {
+    const circumferenceDetails = circumferenceFields
+      .filter(field => measurement[field.name] !== null && measurement[field.name] !== undefined)
+      .map(field => `<div><dt>${escapeHTML(field.label)}</dt><dd>${formatNumber(measurement[field.name])} cm</dd></div>`)
+      .join("");
+    const recordedSkinfolds = skinfoldFields
+      .filter(field => measurement[field.name] !== null && measurement[field.name] !== undefined);
+    const skinfoldDetails = recordedSkinfolds
+      .map(field => `<div><dt>${escapeHTML(field.label)}</dt><dd>${formatNumber(measurement[field.name])} mm</dd></div>`)
+      .join("");
+    const skinfoldTotal = recordedSkinfolds.reduce((sum, field) => sum + Number(measurement[field.name]), 0);
+    const protocolLabel = measurement.skinfoldProtocol === "jackson-pollock-ward-7"
+      ? "Jackson, Pollock & Ward — 7 dobras"
+      : measurement.skinfoldProtocol ? "Registro manual" : "";
+    return `
     <tr>
       <td>${escapeHTML(formatDate(measurement.measuredAt))}</td>
-      <td>${formatNumber(measurement.weightKg)} kg</td>
-      <td>${formatNumber(measurement.heightCm)} cm</td>
-      <td>${formatNumber(measurement.weightKg / (measurement.heightCm / 100) ** 2, 1)}</td>
-      <td>${measurement.waistCm ? `${formatNumber(measurement.waistCm)} cm` : "—"}</td>
-      <td>${measurement.hipCm ? `${formatNumber(measurement.hipCm)} cm` : "—"}</td>
-      <td>${measurement.armCm ? `${formatNumber(measurement.armCm)} cm` : "—"}</td>
+      <td>${measurement.weightKg != null ? `${formatNumber(measurement.weightKg)} kg` : "—"}</td>
+      <td>${measurement.heightCm != null ? `${formatNumber(measurement.heightCm)} cm` : "—"}</td>
+      <td>${measurement.weightKg != null && measurement.heightCm != null
+        ? formatNumber(measurement.weightKg / (measurement.heightCm / 100) ** 2, 1)
+        : "—"}</td>
+      <td>${measurement.waistCm != null ? `${formatNumber(measurement.waistCm)} cm` : "—"}</td>
+      <td>${measurement.hipCm != null ? `${formatNumber(measurement.hipCm)} cm` : "—"}</td>
+      <td>${measurement.armCm != null ? `${formatNumber(measurement.armCm)} cm` : "—"}</td>
+      <td><details class="anthro-details">
+        <summary>Ver detalhes</summary>
+        <strong>Circunferências</strong>
+        ${circumferenceDetails ? `<dl>${circumferenceDetails}</dl>` : "<p>Nenhuma circunferência adicional.</p>"}
+        <strong>Dobras cutâneas</strong>
+        ${skinfoldDetails
+          ? `<p>${escapeHTML(protocolLabel || "Registro manual")} · Soma das dobras registradas: ${formatNumber(skinfoldTotal)} mm</p><dl>${skinfoldDetails}</dl>`
+          : "<p>Nenhuma dobra registrada.</p>"}
+      </details></td>
       <td><button type="button" class="button-secondary patient-delete" data-delete-measurement="${escapeHTML(measurement.id)}">Excluir</button></td>
-    </tr>`).join("")
-    : '<tr><td colspan="8" class="empty-state">Nenhuma medida registrada. Preencha a avaliação acima para começar o histórico.</td></tr>';
+    </tr>`;
+  }).join("")
+    : '<tr><td colspan="9" class="empty-state">Nenhuma medida registrada. Preencha a avaliação acima para começar o histórico.</td></tr>';
+  renderAnthropometryChart(selectedPatient);
 }
 
 function getInitials(name) {
@@ -921,12 +1102,12 @@ function readPatientMeasurements(formData, required = false) {
   }, {});
 }
 
-function readOptionalAnthropometry(formData, name, label, min, max) {
+function readOptionalAnthropometry(formData, name, label, min, max, unit = "cm") {
   const rawValue = String(formData.get(name) || "").trim();
   if (!rawValue) return null;
   const value = Number(rawValue);
   if (!Number.isFinite(value) || value < min || value > max) {
-    throw new Error(`Informe ${label} entre ${min} e ${max} cm.`);
+    throw new Error(`Informe ${label} entre ${min} e ${max} ${unit}.`);
   }
   return value;
 }
@@ -940,9 +1121,9 @@ function saveAnthropometry(event) {
     return;
   }
   const formData = new FormData(event.currentTarget);
-  const measuredAt = String(formData.get("measuredAt") || "");
   const today = new Date();
   const todayKey = getLocalDateKey(today);
+  const measuredAt = String(formData.get("measuredAt") || todayKey);
   const [year, month, day] = measuredAt.split("-").map(Number);
   const date = new Date(year, month - 1, day);
   if (!measuredAt || date.getFullYear() !== year || date.getMonth() !== month - 1 ||
@@ -950,25 +1131,30 @@ function saveAnthropometry(event) {
     showToast("Informe uma data válida, que não seja futura.");
     return;
   }
-  const weightKg = Number(formData.get("weightKg"));
-  const heightCm = Number(formData.get("heightCm"));
-  if (!Number.isFinite(weightKg) || weightKg < 20 || weightKg > 400 ||
-      !Number.isFinite(heightCm) || heightCm < 80 || heightCm > 250) {
-    showToast("Informe peso entre 20 e 400 kg e altura entre 80 e 250 cm.");
-    return;
-  }
   try {
     const entry = {
       id: createId(),
       measuredAt,
       recordedAt: new Date().toISOString(),
-      weightKg,
-      heightCm,
-      waistCm: readOptionalAnthropometry(formData, "waistCm", "circunferência da cintura", 30, 250),
-      hipCm: readOptionalAnthropometry(formData, "hipCm", "circunferência do quadril", 30, 250),
-      armCm: readOptionalAnthropometry(formData, "armCm", "circunferência do braço", 10, 100),
+      weightKg: readOptionalAnthropometry(formData, "weightKg", "o peso", 20, 400, "kg"),
+      heightCm: readOptionalAnthropometry(formData, "heightCm", "a altura", 80, 250),
+      ...circumferenceFields.reduce((values, field) => {
+        values[field.name] = readOptionalAnthropometry(
+          formData, field.name, field.label.toLocaleLowerCase("pt-BR"), field.min, field.max
+        );
+        return values;
+      }, {}),
+      skinfoldProtocol: String(formData.get("skinfoldProtocol") || ""),
+      ...skinfoldFields.reduce((values, field) => {
+        values[field.name] = readOptionalAnthropometry(formData, field.name, field.label, 1, 100, "mm");
+        return values;
+      }, {}),
       source: "Nutricionista"
     };
+    const hasMeasurement = ["weightKg", "heightCm", ...circumferenceFields.map(field => field.name),
+      ...skinfoldFields.map(field => field.name)]
+      .some(field => entry[field] !== null);
+    if (!hasMeasurement) throw new Error("Preencha ao menos uma medida para salvar a avaliação.");
     const data = getStore();
     const storedPatient = data.patients.find(item =>
       item.id === patient.id && item.ownerId === state.user.id
@@ -976,9 +1162,10 @@ function saveAnthropometry(event) {
     if (!storedPatient) throw new Error("Não foi possível localizar este paciente.");
     storedPatient.measurements = storedPatient.measurements || [];
     storedPatient.measurements.push(entry);
-    const latest = sortAnthropometry(storedPatient.measurements)[0];
-    storedPatient.heightCm = latest.heightCm;
-    storedPatient.weightKg = latest.weightKg;
+    storedPatient.heightCm = getLatestAnthropometryValue(storedPatient.measurements, "heightCm") ??
+      storedPatient.heightCm ?? null;
+    storedPatient.weightKg = getLatestAnthropometryValue(storedPatient.measurements, "weightKg") ??
+      storedPatient.weightKg ?? null;
     const account = data.accounts.find(item => item.id === storedPatient.accountId);
     if (account) {
       account.heightCm = storedPatient.heightCm;
@@ -990,8 +1177,13 @@ function saveAnthropometry(event) {
       weightKg: storedPatient.weightKg,
       measurements: storedPatient.measurements
     });
+    const scrollPosition = window.scrollY;
     event.currentTarget.reset();
-    renderAll();
+    renderAnthropometry();
+    renderPatients(document.getElementById("search-input").value);
+    renderRecentPatients();
+    renderReports();
+    window.scrollTo(0, scrollPosition);
     showToast("Avaliação antropométrica salva no histórico.");
   } catch (error) {
     console.error("Erro ao salvar avaliação antropométrica:", error);
@@ -1010,9 +1202,8 @@ function deleteAnthropometryMeasurement(measurementId) {
     );
     if (!storedPatient) throw new Error("Não foi possível localizar este paciente.");
     storedPatient.measurements = (storedPatient.measurements || []).filter(item => item.id !== measurementId);
-    const latest = sortAnthropometry(storedPatient.measurements)[0];
-    storedPatient.heightCm = latest?.heightCm ?? null;
-    storedPatient.weightKg = latest?.weightKg ?? null;
+    storedPatient.heightCm = getLatestAnthropometryValue(storedPatient.measurements, "heightCm");
+    storedPatient.weightKg = getLatestAnthropometryValue(storedPatient.measurements, "weightKg");
     const account = data.accounts.find(item => item.id === storedPatient.accountId);
     if (account) {
       account.heightCm = storedPatient.heightCm;
@@ -1907,6 +2098,20 @@ document.getElementById("patients-table").addEventListener("click", event => {
   if (deleteButton) deletePatient(deleteButton.dataset.deletePatient);
 });
 document.getElementById("anthro-patient").addEventListener("change", renderAnthropometry);
+document.getElementById("anthro-chart-metric").addEventListener("change", () => {
+  const patient = state.patients.find(item =>
+    item.id === document.getElementById("anthro-patient").value
+  );
+  renderAnthropometryChart(patient);
+});
+document.getElementById("patient-anthro-chart-metric").addEventListener("change", () => {
+  renderAnthropometryChart(
+    state.patientPlan?.patient,
+    "patient-anthro-chart-metric",
+    "patient-anthro-chart",
+    "patient-anthro-chart-summary"
+  );
+});
 document.getElementById("anthro-history-table").addEventListener("click", event => {
   const button = event.target.closest("[data-delete-measurement]");
   if (button) deleteAnthropometryMeasurement(button.dataset.deleteMeasurement);

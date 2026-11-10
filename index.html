@@ -292,7 +292,7 @@
       <nav class="nav-list nutritionist-only">
         <button class="nav-link active nutritionist-only" data-view="dashboard"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="8" height="8" rx="2"/><rect x="13" y="3" width="8" height="5" rx="2"/><rect x="13" y="10" width="8" height="11" rx="2"/><rect x="3" y="13" width="8" height="8" rx="2"/></svg>Visão geral</button>
         <button class="nav-link" data-view="patients"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="10" cy="7" r="4"/><path d="M20 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg>Pacientes<span class="nav-count" id="patient-count">24</span></button>
-        <button class="nav-link" data-view="anthropometry">Antropometria</button>
+        <button class="nav-link" data-view="anthropometry"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 20 20 4"/><path d="m7 17 2 2m1-6 2 2m1-6 2 2m1-6 2 2"/><path d="M5 19a2 2 0 0 1 0-3l11-11a2 2 0 0 1 3 3L8 19a2 2 0 0 1-3 0Z"/></svg>Antropometria</button>
         <button class="nav-link" data-view="plans"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2Z"/><path d="M8 7h8M8 11h6"/></svg>Planos alimentares</button>
         <button class="nav-link" data-view="schedule"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M16 3v4M8 3v4M3 11h18"/><path d="m9 16 2 2 4-4"/></svg>Agenda</button>
         <button class="nav-link" data-view="recipes"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M7 3h10l1 5H6l1-5Z"/><path d="M5 8h14l-1 13H6L5 8Z"/><path d="M9 12h6M9 16h6"/></svg>Receitas</button>
@@ -358,34 +358,85 @@
         </section>
 
         <section class="section-view" id="view-patients">
-          <div class="welcome"><div><p class="eyebrow">Seu consultório</p><h1>Pacientes</h1><p>Organize os cadastros e acompanhe cada jornada.</p></div><button class="button-primary" data-open-modal><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>Adicionar paciente</button></div>
+          <div class="welcome"><div><p class="eyebrow">Seu consultório</p><h1>Pacientes</h1><p>Após salvar, os cadastros ficam guardados neste navegador quando você acessar o mesmo endereço do site. Não sincronizam com outros aparelhos.</p></div><button class="button-primary" data-open-modal><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>Adicionar paciente</button></div>
           <div class="page-panel"><div class="panel-heading"><div><h2>Todos os pacientes</h2><p id="patient-list-count">0 pacientes cadastrados</p></div><div class="patient-list-actions"><label class="age-filter-label" for="patient-age-filter">Faixa etária<select id="patient-age-filter"><option value="">Todas as idades</option><option value="children">Crianças · até 11 anos</option><option value="adolescents">Adolescentes · 12 a 17 anos</option><option value="adults">Adultos · 18 a 59 anos</option><option value="older-adults">60 anos ou mais</option><option value="unknown">Sem data de nascimento</option></select></label><button class="button-secondary" id="clear-search">Limpar busca</button></div></div><div class="table-wrap"><table class="data-table"><caption class="sr-only">Pacientes da sua conta</caption><thead><tr><th>PACIENTE</th><th>IDADE / FAIXA</th><th>OBJETIVO</th><th>ALERGIAS / RESTRIÇÕES</th><th>ÚLTIMA CONSULTA</th><th>STATUS</th><th>ACESSO</th><th>AÇÕES</th></tr></thead><tbody id="patients-table"></tbody></table></div></div>
         </section>
 
         <section class="section-view" id="view-anthropometry">
-          <div class="welcome"><div><p class="eyebrow">Acompanhamento individual</p><h1>Antropometria</h1><p>Registre medidas ao longo do tempo e consulte o histórico de cada paciente.</p></div></div>
+          <div class="welcome"><div><p class="eyebrow">Acompanhamento individual</p><h1>Antropometria</h1><p>Registre medidas ao longo do tempo e consulte o histórico de cada paciente. Ao salvar, as avaliações ficam neste navegador.</p></div></div>
           <section class="page-panel">
             <div class="panel-heading"><div><h2>Avaliação antropométrica</h2><p>O IMC é exibido como referência descritiva, sem diagnóstico ou meta automática.</p></div><label class="macro-filter-label" for="anthro-patient">Paciente<select id="anthro-patient"><option value="">Selecione um paciente</option></select></label></div>
-            <div id="anthro-patient-summary" class="anthro-patient-summary" aria-live="polite"><p class="empty-state">Selecione um paciente para consultar o acompanhamento.</p></div>
-            <form id="anthro-form" class="form-grid anthropometry-form">
-              <div class="form-field"><label for="anthro-date">Data da avaliação</label><input id="anthro-date" name="measuredAt" type="date" required></div>
-              <div class="form-field"><label for="anthro-weight">Peso (kg)</label><input id="anthro-weight" name="weightKg" type="number" min="20" max="400" step="0.1" inputmode="decimal" required></div>
-              <div class="form-field"><label for="anthro-height">Altura (cm)</label><input id="anthro-height" name="heightCm" type="number" min="80" max="250" step="0.1" inputmode="decimal" required></div>
+            <div id="anthro-patient-summary" class="anthro-patient-summary" aria-live="polite"><p class="empty-state">Selecione um paciente acima para habilitar o protocolo e os campos de avaliação.</p></div>
+            <form id="anthro-form" class="form-grid anthropometry-form" novalidate>
+              <div class="form-field"><label for="anthro-date">Data da avaliação</label><input id="anthro-date" name="measuredAt" type="date"></div>
+              <div class="form-field"><label for="anthro-weight">Peso (kg) — opcional</label><input id="anthro-weight" name="weightKg" type="number" min="20" max="400" step="0.1" inputmode="decimal"></div>
+              <div class="form-field"><label for="anthro-height">Altura (cm) — opcional</label><input id="anthro-height" name="heightCm" type="number" min="80" max="250" step="0.1" inputmode="decimal"></div>
               <div class="form-field"><label for="anthro-waist">Circunferência da cintura (cm)</label><input id="anthro-waist" name="waistCm" type="number" min="30" max="250" step="0.1" inputmode="decimal"></div>
               <div class="form-field"><label for="anthro-hip">Circunferência do quadril (cm)</label><input id="anthro-hip" name="hipCm" type="number" min="30" max="250" step="0.1" inputmode="decimal"></div>
               <div class="form-field"><label for="anthro-arm">Circunferência do braço (cm)</label><input id="anthro-arm" name="armCm" type="number" min="10" max="100" step="0.1" inputmode="decimal"></div>
+              <fieldset class="anthro-fieldset">
+                <legend>Composição corporal — dobras cutâneas</legend>
+                <div class="form-field anthro-protocol-field">
+                  <label for="anthro-skinfold-protocol">Protocolo de dobras cutâneas</label>
+                  <select id="anthro-skinfold-protocol" name="skinfoldProtocol">
+                    <option value="manual">Registro manual</option>
+                    <option value="jackson-pollock-ward-7">Jackson, Pollock &amp; Ward — 7 dobras</option>
+                  </select>
+                </div>
+                <div class="anthro-fields-grid">
+                  <div class="form-field"><label for="anthro-skinfold-biceps">Bíceps (mm)</label><input id="anthro-skinfold-biceps" name="bicepsMm" type="number" min="1" max="100" step="0.1" inputmode="decimal"></div>
+                  <div class="form-field"><label for="anthro-skinfold-triceps">Tríceps (mm)</label><input id="anthro-skinfold-triceps" name="tricepsMm" type="number" min="1" max="100" step="0.1" inputmode="decimal"></div>
+                  <div class="form-field"><label for="anthro-skinfold-subscapular">Subescapular (mm)</label><input id="anthro-skinfold-subscapular" name="subscapularMm" type="number" min="1" max="100" step="0.1" inputmode="decimal"></div>
+                  <div class="form-field"><label for="anthro-skinfold-suprailiac">Supra-ilíaca (mm)</label><input id="anthro-skinfold-suprailiac" name="suprailiacMm" type="number" min="1" max="100" step="0.1" inputmode="decimal"></div>
+                  <div class="form-field"><label for="anthro-skinfold-abdominal">Abdominal (mm)</label><input id="anthro-skinfold-abdominal" name="skinfoldAbdominalMm" type="number" min="1" max="100" step="0.1" inputmode="decimal"></div>
+                  <div class="form-field"><label for="anthro-skinfold-mid-axillary">Axilar média (mm)</label><input id="anthro-skinfold-mid-axillary" name="midAxillaryMm" type="number" min="1" max="100" step="0.1" inputmode="decimal"></div>
+                  <div class="form-field"><label for="anthro-skinfold-chest">Peitoral (mm)</label><input id="anthro-skinfold-chest" name="skinfoldChestMm" type="number" min="1" max="100" step="0.1" inputmode="decimal"></div>
+                  <div class="form-field"><label for="anthro-skinfold-thigh">Coxa (mm)</label><input id="anthro-skinfold-thigh" name="skinfoldThighMm" type="number" min="1" max="100" step="0.1" inputmode="decimal"></div>
+                </div>
+                <p class="form-hint">O protocolo é salvo junto com as medidas. As dobras são registradas em milímetros; o sistema mostra a soma das medidas preenchidas, sem estimar percentual de gordura.</p>
+              </fieldset>
+              <fieldset class="anthro-fieldset">
+                <legend>Circunferências</legend>
+                <div class="anthro-fields-grid">
+                  <div class="form-field"><label for="anthro-neck">Pescoço (cm)</label><input id="anthro-neck" name="neckCm" type="number" min="10" max="100" step="0.1" inputmode="decimal"></div>
+                  <div class="form-field"><label for="anthro-arm-relaxed-right">Braço direito relaxado (cm)</label><input id="anthro-arm-relaxed-right" name="armRelaxedRightCm" type="number" min="10" max="100" step="0.1" inputmode="decimal"></div>
+                  <div class="form-field"><label for="anthro-arm-relaxed-left">Braço esquerdo relaxado (cm)</label><input id="anthro-arm-relaxed-left" name="armRelaxedLeftCm" type="number" min="10" max="100" step="0.1" inputmode="decimal"></div>
+                  <div class="form-field"><label for="anthro-arm-contracted-right">Braço direito contraído (cm)</label><input id="anthro-arm-contracted-right" name="armContractedRightCm" type="number" min="10" max="100" step="0.1" inputmode="decimal"></div>
+                  <div class="form-field"><label for="anthro-arm-contracted-left">Braço esquerdo contraído (cm)</label><input id="anthro-arm-contracted-left" name="armContractedLeftCm" type="number" min="10" max="100" step="0.1" inputmode="decimal"></div>
+                  <div class="form-field"><label for="anthro-forearm-right">Antebraço direito (cm)</label><input id="anthro-forearm-right" name="forearmRightCm" type="number" min="10" max="80" step="0.1" inputmode="decimal"></div>
+                  <div class="form-field"><label for="anthro-forearm-left">Antebraço esquerdo (cm)</label><input id="anthro-forearm-left" name="forearmLeftCm" type="number" min="10" max="80" step="0.1" inputmode="decimal"></div>
+                  <div class="form-field"><label for="anthro-chest">Peitoral (cm)</label><input id="anthro-chest" name="chestCm" type="number" min="30" max="250" step="0.1" inputmode="decimal"></div>
+                  <div class="form-field"><label for="anthro-abdomen">Abdômen (cm)</label><input id="anthro-abdomen" name="abdomenCm" type="number" min="30" max="250" step="0.1" inputmode="decimal"></div>
+                  <div class="form-field"><label for="anthro-thigh-proximal-right">Coxa proximal direita (cm)</label><input id="anthro-thigh-proximal-right" name="thighProximalRightCm" type="number" min="20" max="150" step="0.1" inputmode="decimal"></div>
+                  <div class="form-field"><label for="anthro-thigh-proximal-left">Coxa proximal esquerda (cm)</label><input id="anthro-thigh-proximal-left" name="thighProximalLeftCm" type="number" min="20" max="150" step="0.1" inputmode="decimal"></div>
+                  <div class="form-field"><label for="anthro-thigh-right">Coxa direita (cm)</label><input id="anthro-thigh-right" name="thighRightCm" type="number" min="20" max="150" step="0.1" inputmode="decimal"></div>
+                  <div class="form-field"><label for="anthro-thigh-left">Coxa esquerda (cm)</label><input id="anthro-thigh-left" name="thighLeftCm" type="number" min="20" max="150" step="0.1" inputmode="decimal"></div>
+                  <div class="form-field"><label for="anthro-calf-right">Panturrilha direita (cm)</label><input id="anthro-calf-right" name="calfRightCm" type="number" min="15" max="100" step="0.1" inputmode="decimal"></div>
+                  <div class="form-field"><label for="anthro-calf-left">Panturrilha esquerda (cm)</label><input id="anthro-calf-left" name="calfLeftCm" type="number" min="15" max="100" step="0.1" inputmode="decimal"></div>
+                </div>
+              </fieldset>
               <p class="form-hint">Para menores de 18 anos, a interpretação do IMC exige referências específicas por idade e sexo. Avalie as medidas no contexto clínico.</p>
+              <p class="form-hint">Preencha somente as medidas que deseja registrar. Informe ao menos uma medida; os demais campos são opcionais.</p>
               <button type="submit" class="button-primary" id="save-anthro-button">Salvar avaliação</button>
             </form>
           </section>
+          <section class="page-panel anthropometry-evolution" aria-labelledby="anthro-evolution-title">
+            <div class="panel-heading">
+              <div><h2 id="anthro-evolution-title">Evolução das medidas</h2><p>Acompanhe cada medida ao longo das avaliações registradas.</p></div>
+              <label class="macro-filter-label" for="anthro-chart-metric">Medida<select id="anthro-chart-metric" disabled><option value="">Selecione um paciente</option></select></label>
+            </div>
+            <div id="anthro-chart-summary" class="anthro-chart-summary" aria-live="polite"><p class="empty-state">Selecione um paciente para visualizar a evolução.</p></div>
+            <div id="anthro-chart" class="anthro-chart" aria-live="polite"></div>
+            <p class="form-hint">O gráfico mostra somente os valores registrados, sem indicar automaticamente se a mudança é uma melhora. Interprete a evolução de acordo com os objetivos e o contexto clínico.</p>
+          </section>
           <section class="page-panel anthropometry-history">
             <div class="panel-heading"><div><h2>Histórico de medidas</h2><p>As avaliações ficam organizadas por data.</p></div></div>
-            <div class="table-wrap"><table class="data-table"><caption class="sr-only">Histórico antropométrico do paciente selecionado</caption><thead><tr><th>DATA</th><th>PESO</th><th>ALTURA</th><th>IMC</th><th>CINTURA</th><th>QUADRIL</th><th>BRAÇO</th><th>AÇÕES</th></tr></thead><tbody id="anthro-history-table"><tr><td colspan="8" class="empty-state">Selecione um paciente para ver o histórico.</td></tr></tbody></table></div>
+            <div class="table-wrap"><table class="data-table"><caption class="sr-only">Histórico antropométrico do paciente selecionado</caption><thead><tr><th>DATA</th><th>PESO</th><th>ALTURA</th><th>IMC</th><th>CINTURA</th><th>QUADRIL</th><th>BRAÇO</th><th>OUTRAS MEDIDAS</th><th>AÇÕES</th></tr></thead><tbody id="anthro-history-table"><tr><td colspan="9" class="empty-state">Selecione um paciente para ver o histórico.</td></tr></tbody></table></div>
           </section>
         </section>
 
         <section class="section-view" id="view-plans">
-          <div class="welcome"><div><p class="eyebrow">Nutrição personalizada</p><h1>Planos alimentares</h1><p>Planos organizados para cada etapa do cuidado.</p></div><button class="button-primary" id="new-plan-button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>Novo plano</button></div>
+          <div class="welcome"><div><p class="eyebrow">Nutrição personalizada</p><h1>Planos alimentares</h1><p>Planos ficam salvos neste navegador quando você clica em “Salvar plano”.</p></div><button class="button-primary" id="new-plan-button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>Novo plano</button></div>
           <div class="meal-plan-grid" id="meal-plans-list"><p class="empty-state">Seus planos aparecerão aqui. Crie um plano e associe a um paciente.</p></div>
         </section>
 
@@ -428,6 +479,15 @@
         <section class="section-view patient-only" id="view-portal" hidden>
           <div class="welcome"><div><p class="eyebrow">Sua alimentação</p><h1>Olá, <span id="portal-patient-name">Paciente</span></h1><p>Acompanhe seu plano, registre refeições e converse com o nutricionista.</p></div></div>
           <div id="patient-plan-list" class="patient-plan-list"><p class="empty-state">Carregando seu plano...</p></div>
+          <section class="page-panel patient-anthropometry-evolution" aria-labelledby="patient-anthro-evolution-title">
+            <div class="panel-heading">
+              <div><h2 id="patient-anthro-evolution-title">Minha evolução corporal</h2><p>Acompanhe suas medidas registradas pelo nutricionista.</p></div>
+              <label class="macro-filter-label" for="patient-anthro-chart-metric">Medida<select id="patient-anthro-chart-metric" disabled><option value="">Carregando medidas</option></select></label>
+            </div>
+            <div id="patient-anthro-chart-summary" class="anthro-chart-summary" aria-live="polite"><p class="empty-state">Suas medidas aparecerão aqui quando forem registradas.</p></div>
+            <div id="patient-anthro-chart" class="anthro-chart" aria-live="polite"></div>
+            <p class="form-hint">O gráfico mostra os valores registrados e a variação entre avaliações. A interpretação depende dos seus objetivos e da orientação do nutricionista; uma mudança não significa automaticamente melhora ou piora.</p>
+          </section>
           <section class="page-panel patient-profile-panel">
             <div class="panel-heading"><div><h2>Meu objetivo e cuidados</h2><p>Conte ao nutricionista seu objetivo e alergias ou restrições.</p></div></div>
             <form id="patient-profile-form" class="form-grid">

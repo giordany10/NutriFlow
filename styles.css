@@ -1477,11 +1477,145 @@ button,
 
 .anthro-patient-summary .form-hint { margin: 0; }
 .anthropometry-form { margin-bottom: 4px; }
+.anthropometry-evolution { margin-top: 16px; }
 .anthropometry-history { margin-top: 16px; }
+.patient-anthropometry-evolution { margin: 16px 0; }
+
+.anthro-chart-summary {
+  min-height: 38px;
+  margin-bottom: 4px;
+}
+
+.anthro-change {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px 28px;
+  padding: 12px;
+  border-radius: 9px;
+  background: #f7f9f6;
+}
+
+.anthro-change span {
+  display: grid;
+  gap: 4px;
+  color: var(--muted);
+  font-size: 10px;
+}
+
+.anthro-change strong {
+  color: var(--green-dark);
+  font-size: 13px;
+}
+
+.anthro-chart {
+  width: 100%;
+  min-height: 90px;
+  overflow: hidden;
+}
+
+.anthro-chart svg {
+  display: block;
+  width: 100%;
+  height: auto;
+  min-height: 170px;
+}
+
+.anthro-chart-grid {
+  stroke: #e8eee8;
+  stroke-width: 1;
+}
+
+.anthro-chart-axis {
+  fill: #77847a;
+  font-size: 11px;
+}
+
+.anthro-chart-line {
+  fill: none;
+  stroke: var(--green);
+  stroke-width: 3;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.anthro-chart-dot {
+  fill: var(--green);
+  stroke: #fff;
+  stroke-width: 2;
+}
+
+.anthro-fieldset {
+  min-width: 0;
+  margin: 4px 0;
+  padding: 16px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+}
+
+.anthro-fieldset legend {
+  padding: 0 6px;
+  color: var(--ink);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.anthro-protocol-field {
+  max-width: 520px;
+}
+
+.anthro-protocol-field label {
+  font-size: 11px !important;
+}
+
+.anthro-fields-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.anthro-details {
+  min-width: 140px;
+  font-size: 10px;
+}
+
+.anthro-details summary {
+  color: var(--green);
+  cursor: pointer;
+  font-weight: 650;
+}
+
+.anthro-details > strong {
+  display: block;
+  margin-top: 10px;
+}
+
+.anthro-details p {
+  margin: 5px 0;
+  line-height: 1.5;
+}
+
+.anthro-details dl {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 5px 12px;
+  margin: 5px 0 0;
+}
+
+.anthro-details dl > div {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.anthro-details dd {
+  margin: 0;
+  white-space: nowrap;
+}
 
 .high-contrast .age-filter-label select,
 .high-contrast .nutrition-table-wrap,
-.high-contrast .anthro-patient-summary {
+.high-contrast .anthro-patient-summary,
+.high-contrast .anthro-fieldset {
   border: 1px solid #555;
 }
 
@@ -1492,6 +1626,7 @@ button,
     width: 100%;
   }
 
+  .anthro-fields-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .age-filter-label select { width: 100%; }
   .nutrition-summary-content { gap: 14px; }
   .nutrition-donut { flex-basis: 96px; width: 96px; height: 96px; }
