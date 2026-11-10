@@ -803,11 +803,11 @@ function renderAnthropometryChart(
   const latest = points[points.length - 1];
   const unit = metric.unit ? ` ${metric.unit}` : "";
   if (points.length === 1) {
-    summary.innerHTML = `<p class="form-hint">1 registro: ${escapeHTML(formatDate(first.date))} — <strong>${formatNumber(first.value)}${unit}</strong>. Registre outra avaliação para acompanhar a variação.</p>`;
+    summary.innerHTML = `<p class="form-hint">1 registro em ${escapeHTML(formatDate(first.date))}: <strong>${formatNumber(first.value)}${unit}</strong>. Registre outra avaliação para acompanhar a variação.</p>`;
   } else {
     const change = latest.value - first.value;
     const sign = change > 0 ? "+" : "";
-    summary.innerHTML = `<div class="anthro-change"><span>Primeiro registro<strong>${formatNumber(first.value)}${unit}</strong></span><span>Registro mais recente<strong>${formatNumber(latest.value)}${unit}</strong></span><span>Variação no período<strong>${sign}${formatNumber(change)}${unit}</strong></span></div>`;
+    summary.innerHTML = `<div class="anthro-change"><span>Primeiro registro · ${escapeHTML(formatDate(first.date))}<strong>${formatNumber(first.value)}${unit}</strong></span><span>Registro mais recente · ${escapeHTML(formatDate(latest.date))}<strong>${formatNumber(latest.value)}${unit}</strong></span><span>Variação no período<strong>${sign}${formatNumber(change)}${unit}</strong></span></div>`;
   }
 
   const width = 720;
@@ -873,7 +873,7 @@ function renderAnthropometry() {
     summary.innerHTML = patients.length
       ? '<p class="empty-state">Selecione um paciente para consultar o acompanhamento.</p>'
       : '<p class="empty-state">Cadastre um paciente para iniciar o acompanhamento antropométrico.</p>';
-    history.innerHTML = '<tr><td colspan="9" class="empty-state">Selecione um paciente para ver o histórico.</td></tr>';
+    history.innerHTML = '<tr><td colspan="10" class="empty-state">Selecione um paciente para ver o histórico.</td></tr>';
     form.querySelectorAll("input, select, button").forEach(field => { field.disabled = true; });
     chartMetric.disabled = true;
     renderAnthropometryChart(null);
@@ -909,6 +909,7 @@ function renderAnthropometry() {
       : measurement.skinfoldProtocol ? "Registro manual" : "";
     return `
     <tr>
+      <td>${escapeHTML(selectedPatient.name)}</td>
       <td>${escapeHTML(formatDate(measurement.measuredAt))}</td>
       <td>${measurement.weightKg != null ? `${formatNumber(measurement.weightKg)} kg` : "—"}</td>
       <td>${measurement.heightCm != null ? `${formatNumber(measurement.heightCm)} cm` : "—"}</td>
@@ -930,7 +931,7 @@ function renderAnthropometry() {
       <td><button type="button" class="button-secondary patient-delete" data-delete-measurement="${escapeHTML(measurement.id)}">Excluir</button></td>
     </tr>`;
   }).join("")
-    : '<tr><td colspan="9" class="empty-state">Nenhuma medida registrada. Preencha a avaliação acima para começar o histórico.</td></tr>';
+    : '<tr><td colspan="10" class="empty-state">Nenhuma medida registrada. Preencha a avaliação acima para começar o histórico.</td></tr>';
   renderAnthropometryChart(selectedPatient);
 }
 
@@ -2065,6 +2066,22 @@ document.getElementById("cancel-plan-modal").addEventListener("click", closePlan
 planModal.addEventListener("click", event => { if (event.target === planModal) closePlanModal(); });
 document.getElementById("patient-form").addEventListener("submit", savePatient);
 document.getElementById("anthro-form").addEventListener("submit", saveAnthropometry);
+document.getElementById("new-anthro-assessment").addEventListener("click", () => {
+  const patientSelect = document.getElementById("anthro-patient");
+  if (!patientSelect.value) {
+    if (patientSelect.disabled) {
+      showToast("Cadastre um paciente antes de registrar medidas.");
+      return;
+    }
+    patientSelect.scrollIntoView({ behavior: "smooth", block: "center" });
+    patientSelect.focus({ preventScroll: true });
+    showToast("Selecione um paciente para registrar uma nova avaliação.");
+    return;
+  }
+  const target = document.getElementById("anthro-date");
+  target.scrollIntoView({ behavior: "smooth", block: "center" });
+  target.focus({ preventScroll: true });
+});
 document.getElementById("patient-profile-form").addEventListener("submit", savePatientProfile);
 document.getElementById("food-log-form").addEventListener("submit", saveFoodLog);
 document.getElementById("patient-message-form").addEventListener("submit", sendPatientMessage);

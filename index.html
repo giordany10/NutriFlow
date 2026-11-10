@@ -416,8 +416,8 @@
                 </div>
               </fieldset>
               <p class="form-hint">Para menores de 18 anos, a interpretação do IMC exige referências específicas por idade e sexo. Avalie as medidas no contexto clínico.</p>
-              <p class="form-hint">Preencha somente as medidas que deseja registrar. Informe ao menos uma medida; os demais campos são opcionais.</p>
-              <button type="submit" class="button-primary" id="save-anthro-button">Salvar avaliação</button>
+              <p class="form-hint">Para acompanhar a evolução, informe a data e as novas medidas. Cada salvamento cria uma avaliação no histórico e atualiza o gráfico; os campos não preenchidos não são incluídos nessa avaliação.</p>
+              <button type="submit" class="button-primary" id="save-anthro-button">Salvar nova avaliação</button>
             </form>
           </section>
           <section class="page-panel anthropometry-evolution" aria-labelledby="anthro-evolution-title">
@@ -430,8 +430,8 @@
             <p class="form-hint">O gráfico mostra somente os valores registrados, sem indicar automaticamente se a mudança é uma melhora. Interprete a evolução de acordo com os objetivos e o contexto clínico.</p>
           </section>
           <section class="page-panel anthropometry-history">
-            <div class="panel-heading"><div><h2>Histórico de medidas</h2><p>As avaliações ficam organizadas por data.</p></div></div>
-            <div class="table-wrap"><table class="data-table"><caption class="sr-only">Histórico antropométrico do paciente selecionado</caption><thead><tr><th>DATA</th><th>PESO</th><th>ALTURA</th><th>IMC</th><th>CINTURA</th><th>QUADRIL</th><th>BRAÇO</th><th>OUTRAS MEDIDAS</th><th>AÇÕES</th></tr></thead><tbody id="anthro-history-table"><tr><td colspan="9" class="empty-state">Selecione um paciente para ver o histórico.</td></tr></tbody></table></div>
+            <div class="panel-heading"><div><h2>Histórico de medidas</h2><p>As avaliações ficam organizadas por data e paciente.</p></div><button type="button" class="button-primary" id="new-anthro-assessment">Atualizar medidas</button></div>
+            <div class="table-wrap"><table class="data-table"><caption class="sr-only">Histórico antropométrico do paciente selecionado</caption><thead><tr><th>PACIENTE</th><th>DATA</th><th>PESO</th><th>ALTURA</th><th>IMC</th><th>CINTURA</th><th>QUADRIL</th><th>BRAÇO</th><th>OUTRAS MEDIDAS</th><th>AÇÕES</th></tr></thead><tbody id="anthro-history-table"><tr><td colspan="10" class="empty-state">Selecione um paciente para ver o histórico.</td></tr></tbody></table></div>
           </section>
         </section>
 
