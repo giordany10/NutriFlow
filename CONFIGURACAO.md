@@ -4,7 +4,7 @@ Abra `index.html` no navegador. Não precisa instalar Node.js, configurar Fireba
 
 ## Contas de demonstração
 
-Há contas fictícias de nutricionista e paciente para testar o painel e o portal. As credenciais não são exibidas na tela de login. Como este protótipo funciona inteiramente no navegador, os dados de conta definidos no JavaScript podem ser inspecionados por quem acessar os arquivos; não são credenciais seguras.
+Há contas fictícias de nutricionista e paciente para testar o painel e o portal. Para acessar como nutricionista Duda, use **duda@nutriflow.com** e a senha **Duda2026!**. Como este protótipo funciona inteiramente no navegador, os dados de conta definidos no JavaScript podem ser inspecionados por quem acessar os arquivos; não são credenciais seguras.
 
 ## Cadastro e acesso do paciente
 

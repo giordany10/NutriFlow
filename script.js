@@ -21,6 +21,14 @@ const demoNutritionist = {
   role: "admin",
   createdAt: "2026-01-01T12:00:00.000Z"
 };
+const demoDudaNutritionist = {
+  id: "demo-nutritionist-duda",
+  name: "Duda",
+  email: "duda@nutriflow.com",
+  password: "Duda2026!",
+  role: "nutritionist",
+  createdAt: "2026-01-01T12:00:00.000Z"
+};
 const demoPatient = {
   id: "demo-patient",
   name: "Ana Silva",
@@ -135,6 +143,7 @@ function createDemoData() {
   return {
     accounts: [
       { ...demoNutritionist },
+      { ...demoDudaNutritionist },
       { ...demoPatient }
     ],
     patients: [{
@@ -179,7 +188,11 @@ function getStore() {
   if (!Array.isArray(data.foodLogs)) data.foodLogs = [];
   if (!Array.isArray(data.messages)) data.messages = [];
   if (!Array.isArray(data.customFoods)) data.customFoods = [];
-  let migratedMeasurements = false;
+  let migratedData = false;
+  if (!data.accounts.some(account => account.id === demoDudaNutritionist.id)) {
+    data.accounts.push({ ...demoDudaNutritionist });
+    migratedData = true;
+  }
   data.patients.forEach(patient => {
     if (Array.isArray(patient.measurements)) return;
     patient.measurements = [];
@@ -198,9 +211,9 @@ function getStore() {
         source: "Cadastro"
       });
     }
-    migratedMeasurements = true;
+    migratedData = true;
   });
-  if (migratedMeasurements) saveStore(data);
+  if (migratedData) saveStore(data);
   return data;
 }
 
